@@ -21,34 +21,55 @@ https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-017-0383-8
 
 ## Survival Data
 
-* Goal: Assess the effect of risk factors on survival
-* Outcome: Y_i: time to event; U_i Time to censoring
+* Goal: 
+    * Assess the effect of risk factors on survival time - time until an event occurs, for example, death, diagnosis recovery, etc.
+    * Estimate and interpret survival
+    * Compare survival time / curve between groups
+
+* Outcome: Y = [T, C] 
+  * T: Observed survival time: time to event (continuous)
+  * C: Censoring (or event) status: Yes/No (binary)
+  
+  <!-- Y_i: time to event; U_i Time to censoring -->
+
+* Data snapshot ...
+
 
 ## Censoring
-Types of Censoring:
 
+Consider $Y_i, U_i$ where $T_i$ is the time to event and $U_i$ is time to censoring, i.e. end of follow up period. We can only observe the minimum of the two time, whichever comes the first, $T_i = min(Y_i,U_i)$. Hence the actual exact survival time (T) is usually unknown, mainly due to that the follow-up period is limited. Some instances are like when there is no event happened up to the end of the follow-up period, researchers lose contact with the patient, patient withdrawal participation, or the exact date of the event is unknown. So we would use censoring to account for the missing data issue. There are three types of censoring:
 
-* Right censoring: $T \geq T_E$
-* Left censoring: $T \leq T_0$
-* Interval censoring: $T_A \leq T \leq T_B$
+* Right censoring: $T \geq T_E$ Event happened after study period
+* Left censoring: $T \leq T_0$ Event happened before study period
+* Interval censoring: $T_A \leq T \leq T_B$ Only know event time interval but don't know the exact time
 
 T: actual survival time   
-$T_0$: Start   
-$T_E$: End of followup  
+$T_0$: Start of study period   
+$T_E$: End of study period  
+
+... image?
+
+For the Random Survival Forest method, we mainly focus on the right-censoring data.
 
 ## Hazard Function
 
+Survival analysis involves three characteristic functions: survival function, hazard function, and cumulative hazard function, of which we can derive all three given any one of the functions. The random survival forest algorithm uses the cumulative hazard function. Hazard function and cumulative hazard function are written as:
 
-$H(t) = \frac {P(t\leq T<t+\Delta t|T\geq t)} {\Delta(t)}$
+Hazard function (hazard rate): instantaneous potential per unit time for the event to occur at time t, given survival up to time t:  
+
+$$h(t) = lim \Delta t \rightarrow 0 : \frac {P(t\leq T<t+\Delta t|T\geq t)} {\Delta(t)}$$
+
+...image? weibull hazard function
 
 
+Cumulative Hazard Function: integrate hazard function h(t) from time 0 to time t 
 
-
-Cumulative Hazard Function:
 $$H(t)=\int_{0}^{t} h(u) \,du$$
 
 
-## Cox porportional hazards model
+# Regression Models for Survival Data
+
+## Cox Porportional Hazards Model (semi-parametric)
 
 
 * Y: [T, C]
@@ -57,26 +78,43 @@ $$H(t)=\int_{0}^{t} h(u) \,du$$
 
 * Hazard rate:
  
-    $h(t)=h_0(t)exp(\sum_{j=1}^p\beta_jX_j)$ assume $X_j$ time-independent.
+    $$h(t)=h_0(t)e^{\sum_{j=1}^p\beta_jX_j}$$ 
+    assume $h_0(t)$ as fixed and $X_j$ are **time-independent**
+    
+    
+
 
 ## PH assumption
 
-Hazard Ratio: Assuming theta independent of time (constant over time)  
+Cox proportional hazards model is usually used for right censored  time-to-event data. Mode is convenient for flexibility and simplicity, but it's restricted to *proportional hazards (PH) assumptions*, which is to assume hazard ratio as independent of time t (constant over time). In other words, the hazard rate at any time point t for a set a covariate X* is **proportional** to the hazard rate at the same time point t for other set of covariate X.
 
-$HR=\frac{h(t,X^*)}{h(t,X)}=exp(\sum_{j=1}^p\beta_j(X_j^*-X_j))=\theta$
+Hazard Ratio $\theta$ is defined as:
 
-## RSF vs CIF (conditional inference forest)
+$$HR=\frac{h(t,X^*)}{h(t,X)}=e^{\sum_{j=1}^p\beta_j(X_j^*-X_j)}=\theta$$
 
-Survival trees and Random survival forest (RSF) models have been identified as alternative methods to the Cox proportional hazards model in analysing time-to-event data. (BMC Medical paper)
+Graphically, this is represented as two roughly parallel survival curves between two sets of covariates.
 
-* As alternative when PH assumption violated
-* survival trees: fully *non-parametric* - flexible, easily handle high dimensional covariate data
-  * flexibility and can automatically detect certain types of **interactions** without the need to specify them beforehand
-  * drawback: bias towards inclusion of variables with many split points
+...image loglog survival curves
 
-CIF: correct bias in RSF "by separating the algorithm for selecting the best covariate to split on from that of the best split point search [15, 17, 18]."
 
-*Cox*-proportional hazards model is usually used for right censored  time-to-event data. Mode is convenient for flexibility and simplicity, but it's restricted to *proportional hazards (PH) assumptions*. 
+
+## Survival Trees as alternative to Cox PH
+
+When PH assumption is violated, which is most of the cases for real life data, we turn to survival trees and Random survival forest (RSF) models as alternative methods to the Cox PH model. (BMC Medical paper)
+
+In contrast of the semi-parametric Cox PH model, survival trees is a fully *non-parametric* method, which is much more flexible and can easily handle high dimensional covariate data. And it can automatically detect certain types of **interactions** without the need to specify them beforehand. However, the drawback of survival trees is that it tends to be biased towards inclusion of variables with many split points. 
+
+Conditional Inference Forest (CIF):
+
+As a further alternative to survival trees, CIF is able to correct bias in RSF "by separating the algorithm for selecting the best covariate to split on from that of the best split point search" (BMC paper)
+
+
+
+
+
+
+
+-------------------------------
 
 # Survival Random Forest / Survival Tree
 
