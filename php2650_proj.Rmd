@@ -2,11 +2,12 @@
 title: "php2650_proj"
 author: "Yifan Zhao"
 date: "12/05/2022"
-output: md_document
+output:  md_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+#  pdf_document
 ```
 
 
@@ -38,7 +39,7 @@ $T_E$: End of followup
 ## Hazard Function
 
 
-$h(t)=\frac{P(t\leq T<t+\Delta t|T\geq t)}{\Delta(t)}$
+$H(t) = \frac {P(t\leq T<t+\Delta t|T\geq t)} {\Delta(t)}$
 
 
 
@@ -56,14 +57,13 @@ $$H(t)=\int_{0}^{t} h(u) \,du$$
 
 * Hazard rate:
  
-    $h(t)=h_0(t)exp(\sum_{j=1}^p\beta_jX_j)$ assume $X-j$ time-independent.
+    $h(t)=h_0(t)exp(\sum_{j=1}^p\beta_jX_j)$ assume $X_j$ time-independent.
 
 ## PH assumption
 
 Hazard Ratio: Assuming theta independent of time (constant over time)  
 
-$HR=\frac{h(t,X^*)}{h(t,X)}=exp(\sum_{j=1}^p\beta_j(X_j^*-X_j)}) = \theta$
-
+$HR=\frac{h(t,X^*)}{h(t,X)}=exp(\sum_{j=1}^p\beta_j(X_j^*-X_j))=\theta$
 
 ## RSF vs CIF (conditional inference forest)
 

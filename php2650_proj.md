@@ -22,7 +22,7 @@ T: actual survival time
 
 ## Hazard Function
 
-$h(t)=\\frac{P(t\\leq T&lt;t+\\Delta t|T\\geq t)}{\\Delta(t)}$
+$H(t) = \\frac {P(t\\leq T&lt;t+\\Delta t|T\\geq t)} {\\Delta(t)}$
 
 Cumulative Hazard Function:
 *H*(*t*) = ∫<sub>0</sub><sup>*t*</sup>*h*(*u*) *d**u*
@@ -36,14 +36,14 @@ Cumulative Hazard Function:
 
 -   Hazard rate:
 
-    $h(t)=h\_0(t)exp(\\sum\_{j=1}^p\\beta\_jX\_j)$ assume *X* − *j*
-    time-independent.
+    $h(t)=h\_0(t)exp(\\sum\_{j=1}^p\\beta\_jX\_j)$ assume
+    *X*<sub>*j*</sub> time-independent.
 
 ## PH assumption
 
 Hazard Ratio: Assuming theta independent of time (constant over time)
 
-$HR=\\frac{h(t,X^\*)}{h(t,X)}=exp(\\sum\_{j=1}^p\\beta\_j(X\_j^\*-X\_j)}) = \\theta$
+$HR=\\frac{h(t,X^\*)}{h(t,X)}=exp(\\sum\_{j=1}^p\\beta\_j(X\_j^\*-X\_j))=\\theta$
 
 ## RSF vs CIF (conditional inference forest)
 
