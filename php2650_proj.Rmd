@@ -37,7 +37,10 @@ $T_E$: End of followup
 
 ## Hazard Function
 
+
 $$h(t)=\frac{P(t\leq T<t+\Delta t|T\geq t)}{\Delta(t)}$$
+
+
 Cumulative Hazard Function:
 $$H(t)=\int_{0}^{t} h(u) \,du$$
 

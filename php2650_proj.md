@@ -23,6 +23,7 @@ T: actual survival time
 ## Hazard Function
 
 $$h(t)=\\frac{P(t\\leq T&lt;t+\\Delta t|T\\geq t)}{\\Delta(t)}$$
+
 Cumulative Hazard Function:
 *H*(*t*) = ∫<sub>0</sub><sup>*t*</sup>*h*(*u*) *d**u*
 
