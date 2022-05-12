@@ -116,11 +116,15 @@ them beforehand. However, the drawback of survival trees is that it
 tends to be biased towards inclusion of variables with many split
 points.
 
-Conditional Inference Forest (CIF):
+### Conditional Inference Forest (CIF)\*:
 
-As a further alternative to survival trees, CIF is able to correct bias
-in RSF “by separating the algorithm for selecting the best covariate to
-split on from that of the best split point search” (BMC paper)
+“The random survival forests algorithm, has been criticised for having a
+bias towards selecting variables with many split points and the
+conditional inference forest algorithm has been identified as a method
+to reduce this selection bias.”. As a further alternative to survival
+trees, CIF is able to correct bias in RSF “by separating the algorithm
+for selecting the best covariate to split on from that of the best split
+point search” (BMC paper)
 
 ------------------------------------------------------------------------
 
@@ -144,13 +148,6 @@ daughter nodes ..
 … Trees are generally unstable and hence researchers have recommended
 the growing of a collection of trees \[10, 27\], commonly referred to as
 random survival forests \[20, 26\].
-
-# CIF conditional inference forest
-
-The random survival forests algorithm, has been criticised for having a
-bias towards selecting variables with many split points and the
-conditional inference forest algorithm has been identified as a method
-to reduce this selection bias.
 
 # Application
 
