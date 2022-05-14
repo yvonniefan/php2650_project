@@ -258,9 +258,8 @@ people who are alive at the moment *t*<sub>*l*, *h*</sub>; The
 cumulative risk function of the leaf node *h* is estimated as
 Nelson-Aalen estimate:
 
-![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;\hat{H}_h(t)=\sum\limits_{t_(l,h)≤t}\frac{d_{l,h}}{Y_{l,h}} =\sum\limits_{t_(l,h)≤t}\frac{who\;died\;at\;time\;l}{who\;known\;still\;survived\;to\;time\;l})
+<img width="435" alt="Screen Shot 2022-05-14 at 7 06 36 PM" src="https://user-images.githubusercontent.com/32623146/168450791-182e43c7-ecd0-48f3-bdf3-f52a7fd132ee.png">
 
-![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;L(x,c)=\frac{\sum\limits_{i=1}^{N}(d_{i,1}-Y_{i,1}\frac{d_{i,1}}{Y_{i,1}})}{\sqrt{\sum\limits_{i=1}^{N}\frac{Y_{i,1}}{Y_{i}}(1-\frac{Y_{i,1}}{Y_{i}})\frac{Y_{i}-d_{i}}{Y_{i}-1}d_{i}}})
 
  
 The cumulative risk function is the same for all samples in the leaf
@@ -293,10 +292,13 @@ Those who survive to time 32 was *i* = 1, 2, 5, people who died at time
 
 So, we have the Nelson-Aalen estimate at time 33:
 
-![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;H(33)=\sum\limits_{i=0}^{33}\frac{d_i}{n_i}=\frac{d_5}{n_5}+\frac{d_30}{n_30}+\frac{d_33}{n_33} =\frac{1}{6}+\frac{1}{4}+\frac{1}{3}=0.75)
+<img width="400" alt="Screen Shot 2022-05-14 at 7 08 06 PM" src="https://user-images.githubusercontent.com/32623146/168450809-745eaddc-9653-4a40-b571-d27cd851c0d0.png">
 
-<img src="https://render.githubusercontent.com/render/math?math=H(33)=\sum\limits_{i=0}^{33}\frac{d_i}{n_i}=\frac{d_5}{n_5}+\frac{d_30}{n_30}+\frac{d_33}{n_33} =\frac{1}{6}+\frac{1}{4}+\frac{1}{3}=0.75">
 
+
+<!-- <img src="https://render.gi![Uploading Screen Shot 2022-05-14 at 7.07.50 PM.png…]()
+thubusercontent.com/render/math?math=H(33)=\sum\limits_{i=0}^{33}\frac{d_i}{n_i}=\frac{d_5}{n_5}+\frac{d_30}{n_30}+\frac{d_33}{n_33} =\frac{1}{6}+\frac{1}{4}+\frac{1}{3}=0.75">
+ -->
  
 ### Bootstrap and OOB integrate cumulative risk functions
 
@@ -317,18 +319,21 @@ a case in *b*th bootstrap sample, otherwise *I*<sub>*i*, *b*</sub> = 0.
 The integrated cumulative risk function of the ith sample from OOB
 (out-of-bag) is:
 
-![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;H{^{**}_{e}}(t│X_i)=\frac{\sum\limits_{b=1}^BI_{i,b}H_b^* (t|X_i)}{\sum\limits_{b=1}^BI_{i,b}})
+<img width="227" alt="Screen Shot 2022-05-14 at 7 08 39 PM" src="https://user-images.githubusercontent.com/32623146/168450826-ebd7f904-bc2d-4dca-a17e-c0c49739b6bd.png">
 
 
-<img src="https://render.githubusercontent.com/render/math?math=H{^{**}_{e}}(t│X_i)=\frac{\sum\limits_{b=1}^BI_{i,b}H_b^* (t|X_i)}{\sum\limits_{b=1}^BI_{i,b}}">
-
+<!-- <img src="https://render.githubusercontent.com/render/math?math=H{^{**}_{e}}(t│X_i)=\frac{\sum\limits_{b=1}^BI_{i,b}H_b^* (t|X_i)}{\sum\limits_{b=1}^BI_{i,b}}">
+ -->
+ 
 And the integrated cumulative risk function of the ith sample from IB
 (in-bag) is:
 
-![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;H_e^*(t│X_i)=\frac{1}{B}\sum\limits_{b=1}^BH_b^*(t|X_i))
+<img width="217" alt="Screen Shot 2022-05-14 at 7 08 58 PM" src="https://user-images.githubusercontent.com/32623146/168450849-3ecc4c43-9f65-4273-9dd5-646133254909.png">
 
-<img src="https://render.githubusercontent.com/render/math?math=H_e^*(t│X_i)=\frac{1}{B}\sum\limits_{b=1}^BH_b^*(t|X_i)">
 
+<!-- <img src="https://render.githubusercontent.com/render/math?math=H_e^*(t│X_i)=\frac{1}{B}\sum\limits_{b=1}^BH_b^*(t|X_i)">
+ -->
+ 
 ## 4. Ensemble mortality
 
 In the Random Survival Forest, mortality is defined as the sum of
@@ -337,10 +342,10 @@ expected value of the cumulative risk function over time
 null hypothesis of similar survival behavior, it measures the expected
 number of deaths. Specifically, the mortality rate of *i* is:
 
-![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;M_i=E_i(\sum\limits_{j=1}^nH(T_j |X_i)))
+<img width="175" alt="Screen Shot 2022-05-14 at 7 09 33 PM" src="https://user-images.githubusercontent.com/32623146/168450870-ea75577b-9545-44a6-b08b-a8db7094fc19.png">
 
 
-<img src="https://render.githubusercontent.com/render/math?math=M_i=E_i(\sum\limits_{j=1}^nH(T_j |X_i))">
+<!-- <img src="https://render.githubusercontent.com/render/math?math=M_i=E_i(\sum\limits_{j=1}^nH(T_j |X_i))"> -->
 
 where *E*<sub>*i*</sub> represents the expectation given the null
 hypothesis that all *j* are similar to *i*.
@@ -353,18 +358,22 @@ tree and its integration indicates an estimate of mortality, which we
 call the ensemble mortality. The integrated mortality rate of the sample
 *i* from IB (in-bag) is defined as:
 
-![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;=\hat{M}{^{*}_{ei}}=\sum\limits_{j=1}^n H{^{*}_{e}(T_j |X_i)})
+<img width="151" alt="Screen Shot 2022-05-14 at 7 10 00 PM" src="https://user-images.githubusercontent.com/32623146/168450882-aeba150d-4ffb-4819-b9a4-64c8c204f5dd.png">
 
 
-<img src="https://render.githubusercontent.com/render/math?math=\hat{M}{^{*}_{ei}}=\sum\limits_{j=1}^n H{^{*}_{e}(T_j |X_i)}">
-
+<!-- <img src="https://render.githubusercontent.com/render/math?math=\hat{M}{^{*}_{ei}}=\sum\limits_{j=1}^n H{^{*}_{e}(T_j |X_i)}">
+ -->
 
 
 Similarly, the integrated mortality rate from the OOB sample *i* is
 defined as:
 
-<img src="https://render.githubusercontent.com/render/math?math=\hat{M}{^{**}_{ei}}=\sum\limits_{j=1}^n H{^{**}_{e}(T_j |X_i)}">
+<img width="158" alt="Screen Shot 2022-05-14 at 7 10 22 PM" src="https://user-images.githubusercontent.com/32623146/168450892-39c827c5-0b81-43ec-bf67-a9c4ffbd5fe8.png">
 
+
+<!-- <img src="https://render.githubusercontent.com/render/math?math=\hat{M}{^{**}_{ei}}=\sum\limits_{j=1}^n H{^{**}_{e}(T_j |X_i)}">
+ -->
+ 
 ## 5. Harrell’s C-index
 
 The intuition behind Harrell’s C-index is as follows. For patient *i*,
@@ -405,8 +414,12 @@ times-to-event.
 
 Thus we have C-index here:
 
-<img src="https://render.githubusercontent.com/render/math?math=C=\frac{concordant\; pair}{concordant\; pair+ discordant\; pair}">
+<img width="295" alt="Screen Shot 2022-05-14 at 7 10 47 PM" src="https://user-images.githubusercontent.com/32623146/168450899-c96e2561-9c46-4114-aafe-95a74b7abb7a.png">
 
+
+<!-- <img src="https://render.githubusercontent.com/render/math?math=C=\frac{concordant\; pair}{concordant\; pair+ discordant\; pair}">
+ -->
+ 
 Values of*C* near 0.5 indicate that the risk score predictions are no
 better than a coin flip in determining which patient will live longer.
 Values near 1 indicate that the risk scores are good at determining
