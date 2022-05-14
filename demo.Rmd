@@ -270,19 +270,19 @@ print.rfsrc(rfsrc.gbs)
 plot(gg_error(rfsrc.gbs))
 
 
-# #对测试集的预测
-# predict.rfsrc(rfsrc_pbcmy, data = pbc.test)
-# predict.rfsrc(rfsrc_pbcmy, data = pbc.trial)
-# #VIMP法变量筛选
-# plot(gg_vimp(rfsrc_pbcmy))
-# #最小深度法变量筛选
-# varsel_pbc <- var.select(rfsrc_pbcmy)
-# gg_md <- gg_minimal_depth(varsel_pbc)
-# plot(gg_md)
-# #两种方法相结合的散点图
-# plot(gg_minimal_vimp(gg_md))+theme(legend.position = c(0.8,0.2))
-# plot(gg_minimal_vimp(rfsrc_pbcmy))+theme(legend.position = c(0.8,0.2))
-# gg_minimal_vimp(rfsrc_pbcmy)
+#对测试集的预测
+predict.rfsrc(rfsrc.gbs, data = gbs.test)
+predict.rfsrc(rfsrc.gbs, data = gbs.train)
+#VIMP法变量筛选
+plot(gg_vimp(rfsrc.gbs))
+#最小深度法变量筛选
+varsel_pbc <- var.select(rfsrc.gbs)
+gg_md <- gg_minimal_depth(varsel_pbc)
+plot(gg_md)
+#两种方法相结合的散点图
+plot(gg_minimal_vimp(gg_md))+theme(legend.position = c(0.8,0.2))
+plot(gg_minimal_vimp(rfsrc.gbs))+theme(legend.position = c(0.8,0.2))
+gg_minimal_vimp(rfsrc.gbs)
 
 ```
 
