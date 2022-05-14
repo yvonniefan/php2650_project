@@ -14,6 +14,10 @@ library(tidyverse)
 library(gridExtra)
 library(knitr)
 library(kableExtra)
+library(survival)
+library(data.table)
+library(ranger)
+library(caret)
 #  pdf_document
 ```
 
@@ -74,7 +78,7 @@ Hazard function (hazard rate): instantaneous potential per unit time for the eve
 
 <img src="https://render.githubusercontent.com/render/math?math=h(t) = lim \Delta t \rightarrow 0 : \frac {P(t\leq T<t+\Delta t|T\geq t)} {\Delta(t)}">
 
-$$h(t) = lim \Delta t \rightarrow 0 : \frac {P(t\leq T<t+\Delta t|T\geq t)} {\Delta(t)}$$
+<!-- $$h(t) = lim \Delta t \rightarrow 0 : \frac {P(t\leq T<t+\Delta t|T\geq t)} {\Delta(t)}$$ -->
 
 
 ```{r ,echo=FALSE}
@@ -100,8 +104,9 @@ $$H(t)=\int_{0}^{t} h(u) \,du$$
 * Hazard rate:
 
 Assume $h_0(t)$ as fixed and $X_j$ are **time-independent**: 
+<img src="https://render.githubusercontent.com/render/math?math=h(t)=h_0(t)e^{\sum_{j=1}^p\beta_jX_j}">
 
-$$h(t)=h_0(t)e^{\sum_{j=1}^p\beta_jX_j}$$ 
+$$h(t)=h_0(t)e^{\sum_{j=1}^p\beta_jX_j}$$
     
 
 
@@ -111,6 +116,8 @@ $$h(t)=h_0(t)e^{\sum_{j=1}^p\beta_jX_j}$$
 Cox proportional hazards model is usually used for right censored  time-to-event data. Mode is convenient for flexibility and simplicity, but it's restricted to *proportional hazards (PH) assumptions*, which is to assume hazard ratio as independent of time t (constant over time). In other words, the hazard rate at any time point t for a set a covariate X* is **proportional** to the hazard rate at the same time point t for other set of covariate X.
 
 Hazard Ratio $\theta$ is defined as:
+
+<img src="https://render.githubusercontent.com/render/math?math=HR=\frac{h(t,X^*)}{h(t,X)}=e^{\sum_{j=1}^p\beta_j(X_j^*-X_j)}=\theta">
 
 $$HR=\frac{h(t,X^*)}{h(t,X)}=e^{\sum_{j=1}^p\beta_j(X_j^*-X_j)}=\theta$$
 
@@ -177,7 +184,7 @@ read.csv('figures/veteran.csv')  %>% kable(caption = 'Veteran Data')
 ```
 
 First, we split data into training set and test set:
-```{r}
+```{r,message=FALSE,warning=FALSE}
 library(survival)
 library(data.table)
 library(ranger)
@@ -275,7 +282,7 @@ functune = function(m){
 # save(findM, file='findM')
 load(file='findM')
 # m = 3 is the optimal m
-# table(findM) 
+table(findM)
 
 ```
 
@@ -304,7 +311,12 @@ The model gives the fitted survival probability in a table format, where rows re
 # fitted survival: survival probability
 # rows represent individual patient; columns represent event time points
 fit.surv = r_fit$survival
-fit.surv %>% data.frame() %>% head(5)
+fit.survdf = data.frame(fit.surv)
+colnames(fit.survdf) <- paste0('T',as.character(r_fit$unique.death.times))
+write.csv(fit.survdf, file = 'fit.survdf.csv')
+read.csv('fit.survdf.csv')
+fit.survdf %>% head(5)
+
 ```
 
 Then I samples 4 individuals to plot fitted survival curve.
