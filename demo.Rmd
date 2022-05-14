@@ -4,6 +4,8 @@ author: "Yifan Zhao"
 date: "13/05/2022"
 output: md_document
   
+editor_options: 
+  chunk_output_type: inline
 ---
 
 ```{r setup, include=FALSE}
@@ -15,39 +17,16 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
-## PBC
 
-```{r}
-table(pbc$status)
-boxplot(time~status,data=pbc)
-# create survival time object
-pbc$T = Surv(time=pbc$time, event=pbc$status)
-km = survfit(T~trt, data=pbc)
-# km curve
-print(km)
-plot(km, col=c('blue','red'), xlab='Time', ylab='Survival Probability', main='Kaplan Meier Curves')
-
-# cox ph model
-coxm1 = coxph(T~trt, data=pbc, ties='breslow')
-summary(coxm1)
-```
-
-## Veteran ranger package
+# Veteran Data
 
 In this demo we're using 'veteran' data from survival package, which records data of randomized trial of two treatment regimens for lung cancer. 
+```{r}
+read.csv('figures/veteran.csv')  %>% kable(caption = 'Veteran Data')
+```
 
-
-trt:	1=standard 2=test
-celltype:	1=squamous, 2=smallcell, 3=adeno, 4=large
-time:	survival time
-status:	censoring status
-karno:	Karnofsky performance score (100=good)
-diagtime:	months from diagnosis to randomisation
-age:	in years
-prior:	prior therapy 0=no, 10=yes
-
-
-```{r }
+First, we split data into training set and test set:
+```{r}
 library(survival)
 library(data.table)
 library(ranger)
@@ -55,45 +34,40 @@ library(caret)
 
 set.seed(123456)
 
-
 data(veteran)
 vet = veteran
-head(vet)
 vet$T = Surv(time=vet$time, event=vet$status)
 
-dim(dt)
 dt <- data.table(veteran)
-# dt[,9] = Surv(time=vet$time, event=vet$status)
-
-rm(veteran)
-
-# plot survival curve:
-dim(dt)
-kmvet = survfit(T~trt, data=vet)
-# km curve
-print(kmvet)
-plot(kmvet, col=c('blue','red'), xlab='Time', ylab='Survival Probability', main='Kaplan Meier Curves')
-legend("topright", lwd = 1, col = c('blue','red'), cex=0.7, y.intersp = 0.5,
-       legend = c('trt=1', 'trt=2'))
-abline(h=0.5,lty=3)
-
 
 # Next, we split the data in a training and test set.
 ind <- sample(1:nrow(dt),round(nrow(dt) * 0.7,0))
 dt_train <- dt[ind,]
 dt_test <- dt[!ind,]
-dim(dt_train)
-dim(dt_test)
-
 vet.tr = vet[ind,]
 vet.te = vet[-ind,]
+```
+
+
+Use Kaplan Meier Curve as a visual summary of the survival probability between treatment groups:
+
+```{r}
+# plot survival curve:
+kmvet = survfit(T~trt, data=vet)
+# km curve
+plot(kmvet, col=c('blue','red'), xlab='Time', ylab='Survival Probability', main='Kaplan Meier Curves')
+legend("topright", lwd = 1, col = c('blue','red'), cex=0.7, y.intersp = 0.5,
+       legend = c('trt=1', 'trt=2'))
+abline(h=0.5,lty=3)
 
 ```
 
-### Cox PH
 
+## Cox PH Model
 
-```{r}
+We first fit a COX PH Model. Using backward selection, we found the 'best' variable to fit the data. However, the log-log survival curves show non-parallel curves between variable groups. So the PH assumption might be violated. 
+
+```{r, results=FALSE}
 ########################################  COX PH ####################################
 coxm0 = coxph(T~(celltype+trt+karno+diagtime+age+prior)^2, data=vet.tr, ties='breslow')
 # coxm1 = step(coxm0, direction = "backward")
@@ -102,7 +76,7 @@ coxm0 = coxph(T~(celltype+trt+karno+diagtime+age+prior)^2, data=vet.tr, ties='br
 coxm1 = coxph(formula = T ~ celltype + trt + karno + diagtime + age +
     prior + celltype:diagtime + trt:karno + trt:prior + karno:diagtime +
     karno:age, data = vet.tr, ties = "breslow")
-summary(coxm1)
+# summary(coxm1)
 
 # PH assumption: non-parallel, violated
 par(mfrow=c(2,2))
@@ -116,22 +90,26 @@ sapply(list(vet.tr$trt, vet.tr$celltype, vet.tr$karno, vet.tr$prior),
                           ylim=c(-2,0.5),
                           main='Log-Log Survival Curves')
 )
-par(mfrow=c(1,1))
+```
 
+The goodness of fit test based on Schoenfeld Residuals is another way to test the PH assumption, which is the null hypothesis. However, we can see a lot of p values of less than 0.05, this validated our concern that the proportional hazard assumption is violated.
 
-# In the goodness of fit test based on Schoenfeld Residuals, we reject the null. So the proportional hazard assumption is violated.
-cox.zph(coxm1)
-
+```{r}
+cox.zph(coxm1) 
 ```
 
 
-Use ranger package to train the random survival models. 
+## Random Survival Models
 
-First find the optimal mtry parameter that gives the smallest OOB error. Over 1000 iterations, m = 3 has the highest frequency of giving the smallest OOB error. Then fit random survival tree with m = 3. The model gives the fitted survival probability in a table format, where rows represent individual patient and columns represent event time points. The variable importance obtained here is very similar to what Cox PH model gave - cell type, treatment, karno, diagtime, age and prior are all considered as important predictor of survival time, except that Cox PH model is able to show interactions between the variables.
+### Use ranger package to train the random survival models. 
+
+Recall that in random forest, we need to find number of variables **mtry ** to randomly select from at each node.  First, we find the optimal mtry parameter that gives the smallest OOB error. Over 1000 iterations, m = 3 has the highest frequency of giving the smallest OOB error. 
 
 ```{r}
 ########################################  Ranger #############################################
-# find best m:
+par(mfrow=c(1,1))
+
+# I created a simple function to find best m:
 functune = function(m){
   sapply(1:6, function(m) ranger(Surv(time, status) ~ .,
                 data = dt_train,
@@ -141,11 +119,20 @@ functune = function(m){
                 num.trees= 1000,
                 importance = 'permutation')$prediction.error)
 }
+# I commented out this line of code to save running time: 
 # findM = apply(replicate(100,functune()), 2, which.min)
 # save(findM, file='findM')
 load(file='findM')
-table(findM) # m = 3
+# m = 3 is the optimal m
+# table(findM) 
 
+```
+
+
+
+So we fit random survival tree with m = 3. 
+
+```{r}
 # fit random survival tree
 r_fit <- ranger(Surv(time, status) ~ .,
                 data = dt_train,
@@ -154,16 +141,24 @@ r_fit <- ranger(Surv(time, status) ~ .,
                 write.forest=TRUE,
                 num.trees= 1000,
                 importance = 'permutation')
+```
 
+
+The model gives the fitted survival probability in a table format, where rows represent individual patient and columns represent event time points, from beginning to the end. 
+
+```{r}
 # distinct survival time in training data
-r_fit$unique.death.times 
+# r_fit$unique.death.times
+
 # fitted survival: survival probability
 # rows represent individual patient; columns represent event time points
 fit.surv = r_fit$survival
-# dim(fit.surv)
+fit.surv %>% data.frame() %>% head(5)
+```
 
+Then I samples 4 individuals to plot fitted survival curve.
 
-# sample 4 individuals to plot fitted survival curve
+```{r}
 par(mfrow=c(1,1))
 set.seed(12345)
 individual = sample(1:dim(dt_train)[1], 4)
@@ -176,12 +171,19 @@ legend("topright", lwd = 1, col = c('red','blue','green','pink'),
        legend = c('id14', 'id51', 'id80', 'id90'))
 
 dt_train[individual,]
+```
 
 
-# variable importance:
+The variable importance obtained here is very similar to what Cox PH model gave - cell type, treatment, karno, diagtime, age and prior are all considered as important predictor of survival time, except that Cox PH model is able to show interactions between the variables.
+
+```{r}
 r_fit$variable.importance
+```
 
-# In the following chunk of code, I calculate the accuracy of the model when it needs to predict survival after 61 days (this is purely arbitrary for demonstrational purposes).
+
+In the following chunk of code, I calculated the accuracy of the model when it needs to predict survival after 61 days (this is purely arbitrary for demonstrational purposes).
+
+```{r}
 preds <- predict(r_fit, dt_test, type = 'response')$survival
 pred.surv <- data.table(preds)
 colnames(pred.surv) <- as.character(r_fit$unique.death.times)
@@ -190,9 +192,7 @@ prediction <- pred.surv$`61` > 0.5
 real <- dt_test$time >= 61
 # confusion matrix:
 table(prediction, real)
-
 ```
-
 
 
 

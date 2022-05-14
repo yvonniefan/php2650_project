@@ -3,10 +3,14 @@ title: "php2650_proj"
 author: "Yifan Zhao"
 date: "12/05/2022"
 output:  md_document
+editor_options: 
+  chunk_output_type: inline
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+setwd("/Users/yvonne/Downloads/PHP2650SL/php2650_project")
+
 #  pdf_document
 ```
 
@@ -26,13 +30,18 @@ https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-017-0383-8
     * Estimate and interpret survival
     * Compare survival time / curve between groups
 
-* Outcome: Y = [T, C] 
-  * T: Observed survival time: time to event (continuous)
-  * C: Censoring (or event) status: Yes/No (binary)
+* Outcome: 
+  * The outcome of interest is a combination of continuous variable represents time to event and a binary variable represents censoring status: Y = [T, C]  
+  * T: Observed survival time
+  * C: Censoring (or event) status
   
-  <!-- Y_i: time to event; U_i Time to censoring -->
 
-* Data snapshot ...
+* Data snapshot:
+
+```{r ,echo=FALSE}
+include_graphics("figures/f1_data.png")
+```
+
 
 
 ## Censoring
@@ -47,7 +56,10 @@ T: actual survival time
 $T_0$: Start of study period   
 $T_E$: End of study period  
 
-... image?
+```{r ,echo=FALSE}
+include_graphics("figures/f2_censor.jpg")
+```
+*Image credit to PHP2514 course material, Dr. Chrysanthopoulou*
 
 For the Random Survival Forest method, we mainly focus on the right-censoring data.
 
@@ -57,9 +69,15 @@ Survival analysis involves three characteristic functions: survival function, ha
 
 Hazard function (hazard rate): instantaneous potential per unit time for the event to occur at time t, given survival up to time t:  
 
+<img src="https://render.githubusercontent.com/render/math?math=h(t) = lim \Delta t \rightarrow 0 : \frac {P(t\leq T<t+\Delta t|T\geq t)} {\Delta(t)}">
+
 $$h(t) = lim \Delta t \rightarrow 0 : \frac {P(t\leq T<t+\Delta t|T\geq t)} {\Delta(t)}$$
 
-...image? weibull hazard function
+
+```{r ,echo=FALSE}
+include_graphics("figures/f3_weibull.jpg")
+```
+*Image credit to PHP2514 course material, Dr. Chrysanthopoulou*
 
 
 Cumulative Hazard Function: integrate hazard function h(t) from time 0 to time t 
@@ -141,71 +159,182 @@ The best split at a node h, on a covariate x at a split point s ∗ is the one t
 Trees are generally unstable and hence researchers have recommended the growing of a collection of trees [10, 27], commonly referred to as random survival forests [20, 26].
 
 
+
 # Application in R
 
-## Veteran ranger package
+
+# Veteran Data
 
 In this demo we're using 'veteran' data from survival package, which records data of randomized trial of two treatment regimens for lung cancer. 
+```{r}
+read.csv('figures/veteran.csv')  %>% kable(caption = 'Veteran Data')
+```
 
-
-trt:	1=standard 2=test
-celltype:	1=squamous, 2=smallcell, 3=adeno, 4=large
-time:	survival time
-status:	censoring status
-karno:	Karnofsky performance score (100=good)
-diagtime:	months from diagnosis to randomisation
-age:	in years
-prior:	prior therapy 0=no, 10=yes
-
-
+First, we split data into training set and test set:
 ```{r}
 library(survival)
 library(data.table)
 library(ranger)
 library(caret)
 
-set.seed(12345)
+set.seed(123456)
 
 data(veteran)
 vet = veteran
-head(vet)
 vet$T = Surv(time=vet$time, event=vet$status)
 
-dim(dt)
 dt <- data.table(veteran)
-# dt[,9] = Surv(time=vet$time, event=vet$status)
-
-rm(veteran)
-
-# plot survival curve:
-dim(dt)
-kmvet = survfit(T~trt, data=vet)
-# km curve
-print(kmvet)
-plot(kmvet, col=c('blue','red'), xlab='Time', ylab='Survival Probability', main='Kaplan Meier Curves')
-legend("topright", lwd = 1, col = c('blue','red'), cex=0.7, y.intersp = 0.5,
-       legend = c('trt=1', 'trt=2'))
-abline(h=0.5,lty=3)
-
 
 # Next, we split the data in a training and test set.
 ind <- sample(1:nrow(dt),round(nrow(dt) * 0.7,0))
 dt_train <- dt[ind,]
 dt_test <- dt[!ind,]
-dim(dt_train)
-dim(dt_test)
-
 vet.tr = vet[ind,]
 vet.te = vet[-ind,]
 ```
 
 
+Use Kaplan Meier Curve as a visual summary of the survival probability between treatment groups:
+
 ```{r}
-coxm0 = coxph(T~(celltype+trt+karno+diagtime+age+prior)^2, data=vet.tr, ties='breslow')
+# plot survival curve:
+kmvet = survfit(T~trt, data=vet)
+# km curve
+plot(kmvet, col=c('blue','red'), xlab='Time', ylab='Survival Probability', main='Kaplan Meier Curves')
+legend("topright", lwd = 1, col = c('blue','red'), cex=0.7, y.intersp = 0.5,
+       legend = c('trt=1', 'trt=2'))
+abline(h=0.5,lty=3)
 
 ```
 
-## Python
+
+## Cox PH Model
+
+We first fit a COX PH Model. Using backward selection, we found the 'best' variable to fit the data. However, the log-log survival curves show non-parallel curves between variable groups. So the PH assumption might be violated. 
+
+```{r, results=FALSE}
+########################################  COX PH ####################################
+coxm0 = coxph(T~(celltype+trt+karno+diagtime+age+prior)^2, data=vet.tr, ties='breslow')
+# coxm1 = step(coxm0, direction = "backward")
+
+# model selected from backward selection
+coxm1 = coxph(formula = T ~ celltype + trt + karno + diagtime + age +
+    prior + celltype:diagtime + trt:karno + trt:prior + karno:diagtime +
+    karno:age, data = vet.tr, ties = "breslow")
+# summary(coxm1)
+
+# PH assumption: non-parallel, violated
+par(mfrow=c(2,2))
+sapply(list(vet.tr$trt, vet.tr$celltype, vet.tr$karno, vet.tr$prior), 
+       function(var) plot(survfit(T ~ var, data=vet.tr),
+                          col=1:10,
+                          fun="cloglog",
+                          ylab='log(-log(S(t)))', 
+                          xlab='log(time)',
+                          xlim=c(20,250),
+                          ylim=c(-2,0.5),
+                          main='Log-Log Survival Curves')
+)
+```
+
+The goodness of fit test based on Schoenfeld Residuals is another way to test the PH assumption, which is the null hypothesis. However, we can see a lot of p values of less than 0.05, this validated our concern that the proportional hazard assumption is violated.
+
+```{r}
+cox.zph(coxm1) 
+```
+
+
+## Random Survival Models
+
+### Use ranger package to train the random survival models. 
+
+Recall that in random forest, we need to find number of variables **mtry ** to randomly select from at each node.  First, we find the optimal mtry parameter that gives the smallest OOB error. Over 1000 iterations, m = 3 has the highest frequency of giving the smallest OOB error. 
+
+```{r}
+########################################  Ranger #############################################
+par(mfrow=c(1,1))
+
+# I created a simple function to find best m:
+functune = function(m){
+  sapply(1:6, function(m) ranger(Surv(time, status) ~ .,
+                data = dt_train,
+                mtry = m,
+                verbose = TRUE,
+                write.forest=TRUE,
+                num.trees= 1000,
+                importance = 'permutation')$prediction.error)
+}
+# I commented out this line of code to save running time: 
+# findM = apply(replicate(100,functune()), 2, which.min)
+# save(findM, file='findM')
+load(file='findM')
+# m = 3 is the optimal m
+# table(findM) 
+
+```
 
 
 
+So we fit random survival tree with m = 3. 
+
+```{r}
+# fit random survival tree
+r_fit <- ranger(Surv(time, status) ~ .,
+                data = dt_train,
+                mtry = 3,
+                verbose = TRUE,
+                write.forest=TRUE,
+                num.trees= 1000,
+                importance = 'permutation')
+```
+
+
+The model gives the fitted survival probability in a table format, where rows represent individual patient and columns represent event time points, from beginning to the end. 
+
+```{r}
+# distinct survival time in training data
+# r_fit$unique.death.times
+
+# fitted survival: survival probability
+# rows represent individual patient; columns represent event time points
+fit.surv = r_fit$survival
+fit.surv %>% data.frame() %>% head(5)
+```
+
+Then I samples 4 individuals to plot fitted survival curve.
+
+```{r}
+par(mfrow=c(1,1))
+set.seed(12345)
+individual = sample(1:dim(dt_train)[1], 4)
+plot(r_fit$unique.death.times, fit.surv[individual[1],], type = 'l', col = 'red',xlab='Time', ylab='Survival Probability', main='Fitted Survival Curve (4 individuals)')
+lines(r_fit$unique.death.times,fit.surv[individual[2],], type = 'l', col = 'blue',xlab='Time', ylab='Survival Probability')
+lines(r_fit$unique.death.times,fit.surv[individual[3],], type = 'l', col = 'green',xlab='Time', ylab='Survival Probability')
+lines(r_fit$unique.death.times,fit.surv[individual[4],], type = 'l', col = 'pink',xlab='Time', ylab='Survival Probability')
+abline(v=dt_train[individual,]$time, lty=3, col=c('red','blue','green','pink'))
+legend("topright", lwd = 1, col = c('red','blue','green','pink'),
+       legend = c('id14', 'id51', 'id80', 'id90'))
+
+dt_train[individual,]
+```
+
+
+The variable importance obtained here is very similar to what Cox PH model gave - cell type, treatment, karno, diagtime, age and prior are all considered as important predictor of survival time, except that Cox PH model is able to show interactions between the variables.
+
+```{r}
+r_fit$variable.importance
+```
+
+
+In the following chunk of code, I calculated the accuracy of the model when it needs to predict survival after 61 days (this is purely arbitrary for demonstrational purposes).
+
+```{r}
+preds <- predict(r_fit, dt_test, type = 'response')$survival
+pred.surv <- data.table(preds)
+colnames(pred.surv) <- as.character(r_fit$unique.death.times)
+
+prediction <- pred.surv$`61` > 0.5
+real <- dt_test$time >= 61
+# confusion matrix:
+table(prediction, real)
+```
