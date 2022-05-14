@@ -260,6 +260,7 @@ Nelson-Aalen estimate:
 
 ![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;\hat{H}_h(t)=\sum\limits_{t_(l,h)≤t}\frac{d_{l,h}}{Y_{l,h}} =\sum\limits_{t_(l,h)≤t}\frac{who\;died\;at\;time\;l}{who\;known\;still\;survived\;to\;time\;l})
 
+![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;L(x,c)=\frac{\sum\limits_{i=1}^{N}(d_{i,1}-Y_{i,1}\frac{d_{i,1}}{Y_{i,1}})}{\sqrt{\sum\limits_{i=1}^{N}\frac{Y_{i,1}}{Y_{i}}(1-\frac{Y_{i,1}}{Y_{i}})\frac{Y_{i}-d_{i}}{Y_{i}-1}d_{i}}})
 
  
 The cumulative risk function is the same for all samples in the leaf
@@ -294,8 +295,8 @@ So, we have the Nelson-Aalen estimate at time 33:
 
 ![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;H(33)=\sum\limits_{i=0}^{33}\frac{d_i}{n_i}=\frac{d_5}{n_5}+\frac{d_30}{n_30}+\frac{d_33}{n_33} =\frac{1}{6}+\frac{1}{4}+\frac{1}{3}=0.75)
 
-<!-- <img src="https://render.githubusercontent.com/render/math?math=H(33)=\sum\limits_{i=0}^{33}\frac{d_i}{n_i}=\frac{d_5}{n_5}+\frac{d_30}{n_30}+\frac{d_33}{n_33} =\frac{1}{6}+\frac{1}{4}+\frac{1}{3}=0.75">
- -->
+<img src="https://render.githubusercontent.com/render/math?math=H(33)=\sum\limits_{i=0}^{33}\frac{d_i}{n_i}=\frac{d_5}{n_5}+\frac{d_30}{n_30}+\frac{d_33}{n_33} =\frac{1}{6}+\frac{1}{4}+\frac{1}{3}=0.75">
+
  
 ### Bootstrap and OOB integrate cumulative risk functions
 
@@ -316,10 +317,15 @@ a case in *b*th bootstrap sample, otherwise *I*<sub>*i*, *b*</sub> = 0.
 The integrated cumulative risk function of the ith sample from OOB
 (out-of-bag) is:
 
+![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;H{^{**}_{e}}(t│X_i)=\frac{\sum\limits_{b=1}^BI_{i,b}H_b^* (t|X_i)}{\sum\limits_{b=1}^BI_{i,b}})
+
+
 <img src="https://render.githubusercontent.com/render/math?math=H{^{**}_{e}}(t│X_i)=\frac{\sum\limits_{b=1}^BI_{i,b}H_b^* (t|X_i)}{\sum\limits_{b=1}^BI_{i,b}}">
 
 And the integrated cumulative risk function of the ith sample from IB
 (in-bag) is:
+
+![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;H_e^*(t│X_i)=\frac{1}{B}\sum\limits_{b=1}^BH_b^*(t|X_i))
 
 <img src="https://render.githubusercontent.com/render/math?math=H_e^*(t│X_i)=\frac{1}{B}\sum\limits_{b=1}^BH_b^*(t|X_i)">
 
@@ -330,6 +336,9 @@ expected value of the cumulative risk function over time
 *T*<sub>*j*</sub>, subject to a specific *X*<sub>*i*</sub>. Under the
 null hypothesis of similar survival behavior, it measures the expected
 number of deaths. Specifically, the mortality rate of *i* is:
+
+![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;M_i=E_i(\sum\limits_{j=1}^nH(T_j |X_i)))
+
 
 <img src="https://render.githubusercontent.com/render/math?math=M_i=E_i(\sum\limits_{j=1}^nH(T_j |X_i))">
 
@@ -344,7 +353,12 @@ tree and its integration indicates an estimate of mortality, which we
 call the ensemble mortality. The integrated mortality rate of the sample
 *i* from IB (in-bag) is defined as:
 
+![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;=\hat{M}{^{*}_{ei}}=\sum\limits_{j=1}^n H{^{*}_{e}(T_j |X_i)})
+
+
 <img src="https://render.githubusercontent.com/render/math?math=\hat{M}{^{*}_{ei}}=\sum\limits_{j=1}^n H{^{*}_{e}(T_j |X_i)}">
+
+
 
 Similarly, the integrated mortality rate from the OOB sample *i* is
 defined as:
@@ -809,3 +823,8 @@ Concordance statistic, and calculation for more time points.
     1 - r_fit$prediction.error
 
     ## [1] 0.6899351
+
+
+
+<img width="168" alt="Screen Shot 2022-05-14 at 1 38 56 PM" src="https://user-images.githubusercontent.com/32623146/168450750-a846ce4d-7dd2-4b60-90c6-c1d3f4504991.png">
+
