@@ -10,7 +10,10 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 setwd("/Users/yvonne/Downloads/PHP2650SL/php2650_project")
-
+library(tidyverse)
+library(gridExtra)
+library(knitr)
+library(kableExtra)
 #  pdf_document
 ```
 
@@ -95,11 +98,12 @@ $$H(t)=\int_{0}^{t} h(u) \,du$$
   * C: Censoring (or event) status
 
 * Hazard rate:
- 
-    $$h(t)=h_0(t)e^{\sum_{j=1}^p\beta_jX_j}$$ 
-    assume $h_0(t)$ as fixed and $X_j$ are **time-independent**
+
+Assume $h_0(t)$ as fixed and $X_j$ are **time-independent**: 
+
+$$h(t)=h_0(t)e^{\sum_{j=1}^p\beta_jX_j}$$ 
     
-    
+
 
 
 ## PH assumption
@@ -110,10 +114,12 @@ Hazard Ratio $\theta$ is defined as:
 
 $$HR=\frac{h(t,X^*)}{h(t,X)}=e^{\sum_{j=1}^p\beta_j(X_j^*-X_j)}=\theta$$
 
-Graphically, this is represented as two roughly parallel survival curves between two sets of covariates.
+Graphically, this is represented as roughly parallel survival curves between different categories of a covariate. For example, the graph below shows parallel pattern between high and low WBC, but non-parallel between medium and the others.
 
-...image loglog survival curves
 
+```{r ,echo=FALSE}
+include_graphics("figures/f4.png")
+```
 
 
 ## Survival Trees as alternative to Cox PH
