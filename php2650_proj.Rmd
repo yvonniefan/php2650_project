@@ -10,7 +10,8 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = "/Users/yvonne/Downloads/PHP2650SL/php2650_project")
-# setwd("/Users/yvonne/Downloads/PHP2650SL/php2650_project")
+setwd("/Users/yvonne/Downloads/PHP2650SL/php2650_project")
+getwd()
 library(tidyverse)
 library(gridExtra)
 library(knitr)
@@ -138,13 +139,7 @@ In contrast of the semi-parametric Cox PH model, survival trees is a fully *non-
 
 ### Conditional Inference Forest (CIF)*:
 
-
-"The random survival forests algorithm, has been criticised for having a bias towards selecting variables with many split points and the conditional inference forest algorithm has been identified as a method to reduce this selection bias. 
-". As a further alternative to survival trees, CIF is able to correct bias in RSF "by separating the algorithm for selecting the best covariate to split on from that of the best split point search" (BMC paper)
-
-
-
-
+Conditional Inference Forest could be used as an alternative to survival trees and is able to avoid the bias towards selecting variables with many split points. CIF corrects bias by y separating the algorithm for selecting the best covariate to split on from that of the best split point search. Nasejje et.al have a more comprehensive discussion about comparing the methods in  [this paper](https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-017-0383-8)
 
 
 
@@ -227,7 +222,7 @@ We have an example here to make our audience clear:
 We have a table below:
 
 ```{r ,echo=FALSE}
-include_graphics("figures/fp1.jpg")
+# include_graphics("figures/fp1.jpg")
 ```
 
 In the table above, $i$ represents patient $i$, $t_i$ represents survival time of patient $i$, where 27+ indicates that the patient exited at moment 27, which belongs to deletion, and it is not known how long the patient survives.
@@ -376,7 +371,7 @@ coxm0 = coxph(Surv(time, status)~(celltype+trt+karno+diagtime+age+prior)^2, data
 # coxm1 = step(coxm0, direction = "backward")
 # model selected from backward selection
 coxm1 = coxph(formula = Surv(time, status) ~ celltype + trt + karno + diagtime + prior + 
-    celltype:trt + trt:karno + trt:diagtime + trt:prior + karno:prior, data = vet.tr, ties = "breslow")
+    celltype:trt + trt:karno + trt:diagtime + trt:prior + karno:prior, data = vet.tr, ties = "breslow", x=TRUE)
 # summary(coxm1)
 # PH assumption: non-parallel, violated
 par(mfrow=c(2,2))
@@ -529,4 +524,31 @@ accuracy_list = sapply(1:dim(preds)[2], function(j) predSurv(j)[[2]])
 # plot accuracy
 plot(accuracy_list,type='o',pch=16, main='Prediction accuracy by time', xlab='Time Index', ylab='Accuracy')
 ```
+
+### C-Index
+
+Additionally, we can use C-Index as metric for model performance. For Cox PH model, we can calculate C-Index using ``pec`` library. 
+For random survival forest model, ``ranger`` compute Harrell’s c-index as a similar measure to the Concordance statistic. And the Harrell's c-index would be 1 - Prediction Error, according to Rickert's discussion. (*https://rviews.rstudio.com/2017/09/25/survival-analysis-with-r/*)
+
+#### Cox PH C-Index:
+```{r ,warning=FALSE, message=FALSE}
+library(pec)
+# install.packages('pec')
+cindexcox = pec::cindex(coxm1, 
+            formula = Surv(time, status) ~ celltype + trt + karno + 
+              diagtime + prior + celltype:trt + trt:karno + trt:diagtime + 
+              trt:prior + karno:prior,
+            data=vet.tr,
+            eval.times=r_fit$unique.death.times) # evaluating all survival times
+plot(cindexcox, xlim=c(0,80))
+```
+
+#### Random Survival Forest Harrell's c-index 
+Harrell's c-index is calculated as below. More exploration will be needed regarding the degree of similarity between Harrell's c-index and Concordance statistic, and calculation for more time points.
+
+```{r}
+1 - r_fit$prediction.error
+```
+
+
 
