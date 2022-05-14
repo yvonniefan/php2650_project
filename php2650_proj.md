@@ -63,7 +63,7 @@ and cumulative hazard function are written as:
 Hazard function (hazard rate): instantaneous potential per unit time for
 the event to occur at time t, given survival up to time t:
 
-<img src="https://render.githubusercontent.com/render/math?math=h(t) = lim \Delta t \rightarrow 0 : \frac {P(t\leq T<t+\Delta t|T\geq t)} {\Delta(t)}">
+<img src="https://render.githubusercontent.com/render/math?math=\Large h(t) = lim \Delta t \rightarrow 0 : \frac {P(t\leq T<t+\Delta t|T\geq t)} {\Delta(t)}">
 
 <!-- $$h(t) = lim \Delta t \rightarrow 0 : \frac {P(t\leq T<t+\Delta t|T\geq t)} {\Delta(t)}$$ -->
 
@@ -86,9 +86,8 @@ to time t
 
 Assume *h*<sub>0</sub>(*t*) as fixed and *X*<sub>*j*</sub> are
 **time-independent**:
-<img src="https://render.githubusercontent.com/render/math?math=h(t)=h_0(t)e^{\sum_{j=1}^p\beta_jX_j}">
+<img src="https://render.githubusercontent.com/render/math?math=\large h(t)=h_0(t)e^{\sum_{j=1}^p\beta_jX_j}">
 
-$$h(t)=h\_0(t)e^{\\sum\_{j=1}^p\\beta\_jX\_j}$$
 
 ## PH assumption
 
@@ -102,9 +101,8 @@ other set of covariate X.
 
 Hazard Ratio *θ* is defined as:
 
-<img src="https://render.githubusercontent.com/render/math?math=HR=\frac{h(t,X^*)}{h(t,X)}=e^{\sum_{j=1}^p\beta_j(X_j^*-X_j)}=\theta">
+<img src="https://render.githubusercontent.com/render/math?math=\Large HR=\frac{h(t,X^*)}{h(t,X)}=e^{\sum_{j=1}^p\beta_j(X_j^*-X_j)}=\theta">
 
-$$HR=\\frac{h(t,X^\*)}{h(t,X)}=e^{\\sum\_{j=1}^p\\beta\_j(X\_j^\*-X\_j)}=\\theta$$
 
 Graphically, this is represented as roughly parallel survival curves
 between different categories of a covariate. For example, the graph
@@ -211,7 +209,8 @@ assigned to the left child node.
 
 Calculate log rank test:
 
-<img src="https://render.githubusercontent.com/render/math?math=L(x,c)=\frac{\sum\limits_{i=1}^{N}(d_{i,1}-Y_{i,1}\frac{d_{i,1}}{Y_{i,1}})}{\sqrt{\sum\limits_{i=1}^{N}\frac{Y_{i,1}}{Y_{i}}(1-\frac{Y_{i,1}}{Y_{i}})\frac{Y_{i}-d_{i}}{Y_{i}-1}d_{i}}}">
+![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;L(x,c)=\frac{\sum\limits_{i=1}^{N}(d_{i,1}-Y_{i,1}\frac{d_{i,1}}{Y_{i,1}})}{\sqrt{\sum\limits_{i=1}^{N}\frac{Y_{i,1}}{Y_{i}}(1-\frac{Y_{i,1}}{Y_{i}})\frac{Y_{i}-d_{i}}{Y_{i}-1}d_{i}}})
+
 
 Where, *j* = 1, 2 represents left and right child nodes,
 
@@ -259,8 +258,10 @@ people who are alive at the moment *t*<sub>*l*, *h*</sub>; The
 cumulative risk function of the leaf node *h* is estimated as
 Nelson-Aalen estimate:
 
-<img src="https://render.githubusercontent.com/render/math?math=\hat{H}_h(t)=\sum\limits_{t_(l,h)≤t}\frac{d_{l,h}}{Y_{l,h}} =\sum\limits_{t_(l,h)≤t}\frac{who\;died\;at\;time\;l}{who\;known\;still\;survived\;to\;time\;l}">
+![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;\hat{H}_h(t)=\sum\limits_{t_(l,h)≤t}\frac{d_{l,h}}{Y_{l,h}} =\sum\limits_{t_(l,h)≤t}\frac{who\;died\;at\;time\;l}{who\;known\;still\;survived\;to\;time\;l})
 
+
+ 
 The cumulative risk function is the same for all samples in the leaf
 node *h*. Each sample *i* has the d-dimension covariant
 *X*<sub>*i*</sub>, and *H*(*t*│*X*<sub>*i*</sub>) represents the
@@ -291,8 +292,11 @@ Those who survive to time 32 was *i* = 1, 2, 5, people who died at time
 
 So, we have the Nelson-Aalen estimate at time 33:
 
-<img src="https://render.githubusercontent.com/render/math?math=H(33)=\sum\limits_{i=0}^{33}\frac{d_i}{n_i}=\frac{d_5}{n_5}+\frac{d_30}{n_30}+\frac{d_33}{n_33} =\frac{1}{6}+\frac{1}{4}+\frac{1}{3}=0.75">
+![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;H(33)=\sum\limits_{i=0}^{33}\frac{d_i}{n_i}=\frac{d_5}{n_5}+\frac{d_30}{n_30}+\frac{d_33}{n_33} =\frac{1}{6}+\frac{1}{4}+\frac{1}{3}=0.75)
 
+<!-- <img src="https://render.githubusercontent.com/render/math?math=H(33)=\sum\limits_{i=0}^{33}\frac{d_i}{n_i}=\frac{d_5}{n_5}+\frac{d_30}{n_30}+\frac{d_33}{n_33} =\frac{1}{6}+\frac{1}{4}+\frac{1}{3}=0.75">
+ -->
+ 
 ### Bootstrap and OOB integrate cumulative risk functions
 
 The cumulative risk function:
