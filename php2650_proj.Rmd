@@ -164,8 +164,7 @@ library(data.table)
 library(ranger)
 library(caret)
 
-set.seed(19880303)
-
+set.seed(12345)
 
 data(veteran)
 vet = veteran
@@ -201,6 +200,10 @@ vet.te = vet[-ind,]
 ```
 
 
+```{r}
+coxm0 = coxph(T~(celltype+trt+karno+diagtime+age+prior)^2, data=vet.tr, ties='breslow')
+
+```
 
 ## Python
 

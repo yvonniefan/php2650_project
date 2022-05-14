@@ -183,8 +183,7 @@ randomisation age: in years prior: prior therapy 0=no, 10=yes
     ## 
     ##     cluster
 
-    set.seed(19880303)
-
+    set.seed(12345)
 
     data(veteran)
 
@@ -250,5 +249,7 @@ randomisation age: in years prior: prior therapy 0=no, 10=yes
 
     vet.tr = vet[ind,]
     vet.te = vet[-ind,]
+
+    coxm0 = coxph(T~(celltype+trt+karno+diagtime+age+prior)^2, data=vet.tr, ties='breslow')
 
 ## Python

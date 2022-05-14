@@ -10,7 +10,6 @@ output: md_document
 getwd()
 setwd("/Users/yvonne/Downloads/PHP2650SL/php2650_project")
 knitr::opts_chunk$set(echo = TRUE)
-library(survival)
 # html_document:
 #     df_print: paged
 
@@ -54,7 +53,7 @@ library(data.table)
 library(ranger)
 library(caret)
 
-set.seed(19880303)
+set.seed(123456)
 
 
 data(veteran)
