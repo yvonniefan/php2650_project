@@ -149,10 +149,106 @@ daughter nodes ..
 the growing of a collection of trees \[10, 27\], commonly referred to as
 random survival forests \[20, 26\].
 
-# Application
+# Application in R
 
-## R
+## Veteran ranger package
 
-GBSG2, pbc data from survival package
+In this demo we’re using ‘veteran’ data from survival package, which
+records data of randomized trial of two treatment regimens for lung
+cancer.
+
+trt: 1=standard 2=test celltype: 1=squamous, 2=smallcell, 3=adeno,
+4=large time: survival time status: censoring status karno: Karnofsky
+performance score (100=good) diagtime: months from diagnosis to
+randomisation age: in years prior: prior therapy 0=no, 10=yes
+
+    library(survival)
+    library(data.table)
+    library(ranger)
+
+    ## Warning: package 'ranger' was built under R version 3.6.2
+
+    library(caret)
+
+    ## Loading required package: lattice
+
+    ## Loading required package: ggplot2
+
+    ## Warning: package 'ggplot2' was built under R version 3.6.2
+
+    ## 
+    ## Attaching package: 'caret'
+
+    ## The following object is masked from 'package:survival':
+    ## 
+    ##     cluster
+
+    set.seed(19880303)
+
+
+    data(veteran)
+
+    ## Warning in data(veteran): data set 'veteran' not found
+
+    vet = veteran
+    head(vet)
+
+    ##   trt celltype time status karno diagtime age prior
+    ## 1   1 squamous   72      1    60        7  69     0
+    ## 2   1 squamous  411      1    70        5  64    10
+    ## 3   1 squamous  228      1    60        3  38     0
+    ## 4   1 squamous  126      1    60        9  63    10
+    ## 5   1 squamous  118      1    70       11  65    10
+    ## 6   1 squamous   10      1    20        5  49     0
+
+    vet$T = Surv(time=vet$time, event=vet$status)
+
+    dim(dt)
+
+    ## NULL
+
+    dt <- data.table(veteran)
+    # dt[,9] = Surv(time=vet$time, event=vet$status)
+
+    rm(veteran)
+
+    ## Warning in rm(veteran): object 'veteran' not found
+
+    # plot survival curve:
+    dim(dt)
+
+    ## [1] 137   8
+
+    kmvet = survfit(T~trt, data=vet)
+    # km curve
+    print(kmvet)
+
+    ## Call: survfit(formula = T ~ trt, data = vet)
+    ## 
+    ##        n events median 0.95LCL 0.95UCL
+    ## trt=1 69     64  103.0      59     132
+    ## trt=2 68     64   52.5      44      95
+
+    plot(kmvet, col=c('blue','red'), xlab='Time', ylab='Survival Probability', main='Kaplan Meier Curves')
+    legend("topright", lwd = 1, col = c('blue','red'), cex=0.7, y.intersp = 0.5,
+           legend = c('trt=1', 'trt=2'))
+    abline(h=0.5,lty=3)
+
+![](php2650_proj_files/figure-markdown_strict/unnamed-chunk-1-1.png)
+
+    # Next, we split the data in a training and test set.
+    ind <- sample(1:nrow(dt),round(nrow(dt) * 0.7,0))
+    dt_train <- dt[ind,]
+    dt_test <- dt[!ind,]
+    dim(dt_train)
+
+    ## [1] 96  8
+
+    dim(dt_test)
+
+    ## [1] 41  8
+
+    vet.tr = vet[ind,]
+    vet.te = vet[-ind,]
 
 ## Python

@@ -141,13 +141,63 @@ The best split at a node h, on a covariate x at a split point s ∗ is the one t
 Trees are generally unstable and hence researchers have recommended the growing of a collection of trees [10, 27], commonly referred to as random survival forests [20, 26].
 
 
-# Application
+# Application in R
 
-## R
+## Veteran ranger package
 
-GBSG2, pbc data from survival package
+In this demo we're using 'veteran' data from survival package, which records data of randomized trial of two treatment regimens for lung cancer. 
+
+
+trt:	1=standard 2=test
+celltype:	1=squamous, 2=smallcell, 3=adeno, 4=large
+time:	survival time
+status:	censoring status
+karno:	Karnofsky performance score (100=good)
+diagtime:	months from diagnosis to randomisation
+age:	in years
+prior:	prior therapy 0=no, 10=yes
+
 
 ```{r}
+library(survival)
+library(data.table)
+library(ranger)
+library(caret)
+
+set.seed(19880303)
+
+
+data(veteran)
+vet = veteran
+head(vet)
+vet$T = Surv(time=vet$time, event=vet$status)
+
+dim(dt)
+dt <- data.table(veteran)
+# dt[,9] = Surv(time=vet$time, event=vet$status)
+
+rm(veteran)
+
+# plot survival curve:
+dim(dt)
+kmvet = survfit(T~trt, data=vet)
+# km curve
+print(kmvet)
+plot(kmvet, col=c('blue','red'), xlab='Time', ylab='Survival Probability', main='Kaplan Meier Curves')
+legend("topright", lwd = 1, col = c('blue','red'), cex=0.7, y.intersp = 0.5,
+       legend = c('trt=1', 'trt=2'))
+abline(h=0.5,lty=3)
+
+
+# Next, we split the data in a training and test set.
+ind <- sample(1:nrow(dt),round(nrow(dt) * 0.7,0))
+dt_train <- dt[ind,]
+dt_test <- dt[!ind,]
+dim(dt_train)
+dim(dt_test)
+
+vet.tr = vet[ind,]
+vet.te = vet[-ind,]
 ```
 
 
