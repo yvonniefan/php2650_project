@@ -1,0 +1,288 @@
+---
+title: "demo"
+author: "Yifan Zhao"
+date: "13/05/2022"
+output: md_document
+  
+---
+
+```{r setup, include=FALSE}
+getwd()
+setwd("/Users/yvonne/Downloads/PHP2650SL/php2650_project")
+knitr::opts_chunk$set(echo = TRUE)
+library(survival)
+# html_document:
+#     df_print: paged
+
+```
+
+## PBC
+
+```{r}
+table(pbc$status)
+boxplot(time~status,data=pbc)
+# create survival time object
+pbc$T = Surv(time=pbc$time, event=pbc$status)
+km = survfit(T~trt, data=pbc)
+# km curve
+print(km)
+plot(km, col=c('blue','red'), xlab='Time', ylab='Survival Probability', main='Kaplan Meier Curves')
+
+# cox ph model
+coxm1 = coxph(T~trt, data=pbc, ties='breslow')
+summary(coxm1)
+```
+
+## Veteran ranger package
+
+In this demo we're using 'veteran' data from survival package, which records data of randomized trial of two treatment regimens for lung cancer. 
+
+
+trt:	1=standard 2=test
+celltype:	1=squamous, 2=smallcell, 3=adeno, 4=large
+time:	survival time
+status:	censoring status
+karno:	Karnofsky performance score (100=good)
+diagtime:	months from diagnosis to randomisation
+age:	in years
+prior:	prior therapy 0=no, 10=yes
+
+
+```{r }
+library(survival)
+library(data.table)
+library(ranger)
+library(caret)
+
+set.seed(19880303)
+
+
+data(veteran)
+vet = veteran
+head(vet)
+vet$T = Surv(time=vet$time, event=vet$status)
+
+dim(dt)
+dt <- data.table(veteran)
+# dt[,9] = Surv(time=vet$time, event=vet$status)
+
+rm(veteran)
+
+# plot survival curve:
+dim(dt)
+kmvet = survfit(T~trt, data=vet)
+# km curve
+print(kmvet)
+plot(kmvet, col=c('blue','red'), xlab='Time', ylab='Survival Probability', main='Kaplan Meier Curves')
+legend("topright", lwd = 1, col = c('blue','red'), cex=0.7, y.intersp = 0.5,
+       legend = c('trt=1', 'trt=2'))
+abline(h=0.5,lty=3)
+
+
+# Next, we split the data in a training and test set.
+ind <- sample(1:nrow(dt),round(nrow(dt) * 0.7,0))
+dt_train <- dt[ind,]
+dt_test <- dt[!ind,]
+dim(dt_train)
+dim(dt_test)
+
+vet.tr = vet[ind,]
+vet.te = vet[-ind,]
+
+########################################  COX PH ####################################
+coxm0 = coxph(T~(celltype+trt+karno+diagtime+age+prior)^2, data=vet.tr, ties='breslow')
+coxph(Surv(time,status)~(celltype+trt+karno+diagtime+age+prior)^2, data=dt_train, ties='breslow')
+# 'best' model using backward selection
+coxm1 = step(coxm0, direction = "backward")
+summary(coxm1)
+
+# coxph(formula = T ~ celltype + trt + karno + diagtime + age + 
+#     prior + celltype:diagtime + trt:karno + trt:prior + karno:diagtime + 
+#     karno:age, data = vet.tr, ties = "breslow")
+
+
+# PH assumption: non-parallel, violated
+par(mfrow=c(2,2))
+sapply(list(vet.tr$trt, vet.tr$celltype, vet.tr$karno, vet.tr$prior), 
+       function(var) plot(survfit(T ~ var, data=vet.tr),
+                          col=1:10,
+                          fun="cloglog",
+                          ylab='log(-log(S(t)))', 
+                          xlab='log(time)',
+                          xlim=c(20,250),
+                          ylim=c(-2,0.5),
+                          main='Log-Log Survival Curves')
+)
+par(mfrow=c(1,1))
+
+
+# by trt: In the goodness of fit test based on Schoenfeld Residuals, we reject the null. So the proportional hazard assumption is violated.
+cox.zph(coxm1)
+
+# not useful
+plot(density(vet$time))
+
+```
+
+Use ranger package to train the random survival models. 
+
+First find the optimal mtry parameter that gives the smallest OOB error. Over 1000 iterations, m = 3 has the highest frequency of giving the smallest OOB error. 
+
+```{r}
+########################################  Ranger #############################################
+# find best m:
+functune = function(m){
+  sapply(1:6, function(m) ranger(Surv(time, status) ~ .,
+                data = dt_train,
+                mtry = m,
+                verbose = TRUE,
+                write.forest=TRUE,
+                num.trees= 1000,
+                importance = 'permutation')$prediction.error)
+}
+# findM = apply(replicate(100,functune()), 2, which.min)
+# save(findM, file='findM')
+load(file='findM')
+table(findM) # m = 3
+
+# fit random survival tree
+r_fit <- ranger(Surv(time, status) ~ .,
+                data = dt_train,
+                mtry = 3,
+                verbose = TRUE,
+                write.forest=TRUE,
+                num.trees= 1000,
+                importance = 'permutation')
+
+# distinct survival time in training data
+r_fit$unique.death.times 
+# fitted survival: survival probability
+# rows represent individual patient; columns represent event time points
+fit.surv = r_fit$survival
+# dim(fit.surv)
+
+
+# sample 3 individuals to plot fitted survival curve
+par(mfrow=c(1,1))
+set.seed(12345)
+individual = sample(1:dim(dt_train)[1], 4)
+plot(r_fit$unique.death.times, fit.surv[individual[1],], type = 'l', col = 'red',xlab='Time', ylab='Survival Probability')
+lines(r_fit$unique.death.times,fit.surv[individual[2],], type = 'l', col = 'blue',xlab='Time', ylab='Survival Probability')
+lines(r_fit$unique.death.times,fit.surv[individual[3],], type = 'l', col = 'green',xlab='Time', ylab='Survival Probability')
+lines(r_fit$unique.death.times,fit.surv[individual[4],], type = 'l', col = 'pink',xlab='Time', ylab='Survival Probability')
+abline(v=dt_train[individual,]$time, lty=3, col=c('red','blue','green','pink'))
+legend("topright", lwd = 1, col = c('red','blue','green','pink'),
+       legend = c('id14', 'id51', 'id80', 'id90'))
+
+dt_train[individual,]
+
+plot(survfit(T ~ trt, data=vet.tr))
+
+# variable importance:
+r_fit$variable.importance
+
+# In the following chunk of code, I calculate the accuracy of the model when it needs to predict survival after 61 days (this is purely arbitrary for demonstrational purposes).
+preds <- predict(r_fit, dt_test, type = 'response')$survival
+pred.surv <- data.table(preds)
+colnames(pred.surv) <- as.character(r_fit$unique.death.times)
+
+prediction <- pred.surv$`61` > 0.5
+real <- dt_test$time >= 61
+# confusion matrix:
+table(prediction, real)
+
+```
+
+
+
+
+## GBSG2
+
+https://rdrr.io/cran/TH.data/man/GBSG2.html
+
+A data frame containing the observations from the GBSG2 study.
+
+This data frame contains the observations of 686 women:
+
+horTh
+hormonal therapy, a factor at two levels no and yes.
+age
+of the patients in years.
+menostat
+menopausal status, a factor at two levels pre (premenopausal) and post (postmenopausal).
+tsize
+tumor size (in mm).
+tgrade
+tumor grade, a ordered factor at levels I < II < III.
+pnodes
+number of positive nodes.
+progrec
+progesterone receptor (in fmol).
+estrec
+estrogen receptor (in fmol).
+time
+recurrence free survival time (in days).
+cens
+censoring indicator (0- censored, 1- event).
+
+
+reference: https://arxiv.org/pdf/1612.08974.pdf
+```{r}
+########################################  GBSG2:  #############################################
+# install.packages('ggRandomForest')
+library(ggRandomForests)
+data("GBSG2", package = "TH.data")
+gbs = GBSG2
+# ?GBSG2
+head(gbs)
+
+
+dim(gbs)[1]
+set.seed(999)
+tidx = sample(1:dim(gbs)[1], floor(dim(gbs)[1]*0.25))
+gbs.train = gbs[-tidx,]
+gbs.test = gbs[tidx,]
+# create survival object 
+gg_dta <- gg_survival(interval = "time",
+                      censor = "cens",
+                      by = "horTh",
+                      data = gbs.train,
+                      conf.int = 0.95 )
+
+# KM curve
+plot(gg_dta)+
+  labs(y = "Survival Probability", x = "Observation Time", color = "Hormonal Therapy", fill = "Hormonal Therapy") +
+  theme(legend.position = c(0.2,0.2))+
+  coord_cartesian(y = c(0, 1.01))
+
+# Cumulative Hazard plot:
+plot(gg_dta, type ="cum_haz")+
+  labs(y = "Cumulative Hazard", x = "Observation Time(years)", color = "Hormonal Therapy", fill = "Hormonal Therapy") +
+  theme(legend.position = c(0.2, 0.8))+
+  coord_cartesian( ylim = c(-0.02, 1.22))
+
+# grows the forest
+rfsrc.gbs <- rfsrc(Surv(time, cens) ~ ., data = gbs.train,
+                     nsplit = 10, na.action = "na.impute",tree.err = TRUE, importance = TRUE)
+print.rfsrc(rfsrc.gbs)
+
+# plot OOB error
+plot(gg_error(rfsrc.gbs))
+
+
+# #对测试集的预测
+# predict.rfsrc(rfsrc_pbcmy, data = pbc.test)
+# predict.rfsrc(rfsrc_pbcmy, data = pbc.trial)
+# #VIMP法变量筛选
+# plot(gg_vimp(rfsrc_pbcmy))
+# #最小深度法变量筛选
+# varsel_pbc <- var.select(rfsrc_pbcmy)
+# gg_md <- gg_minimal_depth(varsel_pbc)
+# plot(gg_md)
+# #两种方法相结合的散点图
+# plot(gg_minimal_vimp(gg_md))+theme(legend.position = c(0.8,0.2))
+# plot(gg_minimal_vimp(rfsrc_pbcmy))+theme(legend.position = c(0.8,0.2))
+# gg_minimal_vimp(rfsrc_pbcmy)
+
+```
+
