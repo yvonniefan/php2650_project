@@ -273,6 +273,9 @@ We have an example here to make our audience clear:
 
 We have a table below:
 
+![WechatIMG1462](https://user-images.githubusercontent.com/32623146/168451045-18dd72c3-2ec6-4a7e-b0f7-0164fba21b10.png)
+
+
 In the table above, *i* represents patient *i*, *t*<sub>*i*</sub>
 represents survival time of patient *i*, where 27+ indicates that the
 patient exited at moment 27, which belongs to deletion, and it is not
@@ -444,12 +447,15 @@ subject *j*’s response is a one. The pair is concordant if
 
 We also have an example below
 
-read.csv(‘figures/dtrsf1.csv’) %>% kable(caption = ‘Veteran Data’)
+<img width="341" alt="Screen Shot 2022-05-14 at 7 23 13 PM" src="https://user-images.githubusercontent.com/32623146/168451122-6b37e321-c8cb-41fa-a7bc-ba5d737ff75e.png">
+
+
 
 We have Concordant pairs：(A,C) (A,E) (C,D) so we can calculate the
 C-Index:
 
-$C=\\frac{3}{6}=0.5$
+<img width="118" alt="Screen Shot 2022-05-14 at 7 22 11 PM" src="https://user-images.githubusercontent.com/32623146/168451099-f018b1ef-181d-4b18-a83b-ebdde2f8f077.png">
+
 
 This means that the prediction is not much better than a random guess.
 
