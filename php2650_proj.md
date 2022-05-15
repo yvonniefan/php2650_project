@@ -1,5 +1,5 @@
-**Reference:**
-<https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-017-0383-8>
+
+
 
 # Survival Analysis
 
@@ -124,7 +124,7 @@ between medium and the others.
 
 When PH assumption is violated, which is most of the cases for real life
 data, we turn to survival trees and Random survival forest (RSF) models
-as alternative methods to the Cox PH model. (BMC Medical paper)
+as alternative methods to the Cox PH model. [BMC Medical paper] (<https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-017-0383-8>)
 
 In contrast of the semi-parametric Cox PH model, survival trees is a
 fully *non-parametric* method, which is much more flexible and can
@@ -712,7 +712,7 @@ fitted survival probability table.
     ## 4 0.9934633 0.9868441 0.9661402 0.9604876 0.9604876 0.9553862
     ## 5 0.9600375 0.9600375 0.9297039 0.8834538 0.8834538 0.8828354
 
-Then I sampled 4 individuals to plot fitted survival curve.
+Then I sampled 4 individuals to plot fitted survival curve. Vertical lines are the corresponding actual event time of the four individuals.
 
     par(mfrow=c(1,1))
     set.seed(12345)
@@ -727,7 +727,9 @@ Then I sampled 4 individuals to plot fitted survival curve.
 
 ![](php2650_proj_files/figure-markdown_strict/unnamed-chunk-14-1.png)
 
-    veteran_train[individual,]
+    #covariate values of the four individuals:
+    veteran_train[individual,] 
+
 
     ##    trt  celltype time status karno diagtime age prior
     ## 1:   2 smallcell   21      1    20        4  71     0
