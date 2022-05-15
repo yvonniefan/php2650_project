@@ -3,6 +3,15 @@
 
 # Survival Analysis
 
+Suppose there is a new drug M for treating heart disease, we want to explore whether this drug can improve a patient's index (such as survival time). Then the simplest idea is to randomly divide the patients into two groups: group A or group B, with group A given the drug and group B given the placebo. The average survival time of group A and group B were detected at the end. If group A is better than group B as a whole (e.g. using t-test), we think the drug is effective.
+
+However, things don't always go our way.  If an old lady in group A unfortunately died in a car accident during treatment (e.g. three months after starting treatment), and an old gentleman's family in group B disagreed to continue treatment (e.g. five months after starting treatment) and terminate it, what impact would this have on our data?
+Because the t-test needs to find the average of the two sets of data, and what number should we use for the old lady who has a car accident? Three months? This is rather unscientific.
+
+However, it would be very unwise to delete it. Because it would make us lose some information. The three months gave us the message: the old lady lived for at least three months! If you delete this record, you lose the whole data. Consider an extreme case: what if all the samples in the data set were like this? Blind deletion will definitely increase the variance of the model and reduce the estimation accuracy.
+
+So how do you make sense of such data? We need survival analysis to deal with this kind of special time data which may have partial censored data. In this project we will introduce some traditional survival analysis methods and focus on a different method from the traditional method: Random Survival Forest (RSF). 
+
 ## Survival Data
 
 -   Goal:
@@ -146,13 +155,9 @@ factors that are predictive of the time-to-event outcome.
 
 ## 1. Introduction
 
-Random survival forest (RSF) is a random forest method used to analyze
-right deletion survival data. It introduces new survival splitting rules
-for growing survival trees and new missing data algorithms for
-estimating missing data. RSF introduced the event retention principle
-for living forests and used it to define overall mortality, which is a
-simple interpretable mortality measure that can be used as a predictive
-result. R package “randomSurvivalForest” provides an interface to use.
+Random survival forest (RSF) is a random forest method used to analyze right deletion survival data. It introduces new survival splitting rules for growing survival trees and new missing data algorithms for estimating missing data.
+
+RSF introduced the event retention principle for living forests and used it to define overall mortality, which is a simple interpretable mortality measure that can be used as a predictive result. 
 
 ## 2. RSF framework
 
@@ -458,6 +463,19 @@ C-Index:
 
 
 This means that the prediction is not much better than a random guess.
+
+## 6. Criteria for variable selection
+
+Since the random survival forest model selects many features of input data as its split nodes to build the model, the model retains miscellaneous variables. However, not all variables have positive significance in the process of model building. Therefore, through variable screening, we can understand the role of each variable in the process of model building. 
+
+There are two methods to evaluate the importance of variables, namely VIMP (variable Importance) method and minimal depth method. The calculation principle of VIMP method is to put the out of bag data into the survival tree and make it randomly assigned to any child node. Then calculate the new total cumulative risk and VIMP is the difference between the original error rate and the new error rate. Therefore, the larger the VIMP is, the greater the impact of this variable on the accuracy of the model and the higher the importance of this variable. Different from VIMP, the minimum depth rule believes that the variable to be retained should be the variable that can distinguish the most data, namely the node closest to the root node. Therefore, the minimum depth method considers that variables with smaller values are more important to the model.
+
+## 7. Some discussions
+
+Compared with traditional survival analysis methods like Cox proportional risk regression, the prediction accuracy of random survival forest model is at least equal to or better than that of traditional survival analysis method. The advantage of the random survival forest model is that it is not constrained by the proportional hazard assumption, log-linear assumption, and other conditions. At the same time, the random survival forest has the advantages of the general random forest, which can prevent the over-fitting problem of its algorithm through two random sampling processes. In addition, random survival forest can also perform survival analysis and variable screening on high-dimensional data and can also be applied to analysis of competing risks. Therefore, the random survival forest model has more extensive research space.
+
+It should be emphasized that although several literatures have shown that the accuracy of the random survival forest model is better than or at least equal to that of the traditional survival model, the traditional survival analysis method is still indispensable when the data meet the requirements of the traditional survival analysis. As an emerging method, random survival forest also has a defect: it is susceptible to outliers. When analyzing data with outliers, the prediction accuracy is slightly inferior to traditional survival analysis methods]. Cox proportional hazard regression model for survival data analysis is not only used for prediction, but also can be more convenient to give the relationship between variables and survival outcome, so it should be combined with the traditional survival analysis and random survival forest model cannot completely replace the traditional survival analysis model.
+
 
 # Application in R
 
