@@ -1,7 +1,16 @@
-**Reference:**
-<https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-017-0383-8>
+
+
 
 # Survival Analysis
+
+Suppose there is a new drug M for treating heart disease, we want to explore whether this drug can improve a patient's index (such as survival time). Then the simplest idea is to randomly divide the patients into two groups: group A or group B, with group A given the drug and group B given the placebo. The average survival time of group A and group B were detected at the end. If group A is better than group B as a whole (e.g. using t-test), we think the drug is effective.
+
+However, things don't always go our way.  If an old lady in group A unfortunately died in a car accident during treatment (e.g. three months after starting treatment), and an old gentleman's family in group B disagreed to continue treatment (e.g. five months after starting treatment) and terminate it, what impact would this have on our data?
+Because the t-test needs to find the average of the two sets of data, and what number should we use for the old lady who has a car accident? Three months? This is rather unscientific.
+
+However, it would be very unwise to delete it. Because it would make us lose some information. The three months gave us the message: the old lady lived for at least three months! If you delete this record, you lose the whole data. Consider an extreme case: what if all the samples in the data set were like this? Blind deletion will definitely increase the variance of the model and reduce the estimation accuracy.
+
+So how do you make sense of such data? We need survival analysis to deal with this kind of special time data which may have partial censored data. In this project we will introduce some traditional survival analysis methods and focus on a different method from the traditional method: Random Survival Forest (RSF). 
 
 ## Survival Data
 
@@ -115,7 +124,7 @@ between medium and the others.
 
 When PH assumption is violated, which is most of the cases for real life
 data, we turn to survival trees and Random survival forest (RSF) models
-as alternative methods to the Cox PH model. (BMC Medical paper)
+as alternative methods to the Cox PH model. [BMC Medical paper] (<https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-017-0383-8>)
 
 In contrast of the semi-parametric Cox PH model, survival trees is a
 fully *non-parametric* method, which is much more flexible and can
@@ -139,46 +148,40 @@ paper](https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-017-0
 
 # Survival Random Forest
 
-Idea: partitioning the covariate space recursively to form groups of
-subjects who are similar according to the time-to-event outcome.
-Minimizing a given impurity measure. Goal: To identify prognostic
-factors that are predictive of the time-to-event outcome.
 
 ## 1. Introduction
 
-Random survival forest (RSF) is a random forest method used to analyze
-right deletion survival data. It introduces new survival splitting rules
-for growing survival trees and new missing data algorithms for
-estimating missing data. RSF introduced the event retention principle
-for living forests and used it to define overall mortality, which is a
-simple interpretable mortality measure that can be used as a predictive
-result. R package “randomSurvivalForest” provides an interface to use.
+Random survival forest (RSF) is a random forest method used to analyze right deletion survival data. It introduces new survival splitting rules for growing survival trees and new missing data algorithms for estimating missing data [1,2,15,16].
+
+RSF introduced the event retention principle for survival forests and used it to define overall mortality (death rate), which is a simple interpretable death rate that can be used as a predictive result [2]. 
 
 ## 2. RSF framework
 
-1.  Extract *B* bootstrap samples from the original data, and each
-    bootstrap sample excludes 37% of the data on average, which is
-    called out-of-bag data (OOB data).
+We would follow the procedure below [2]:
+
+1.  Extract *B* bootstrap samples from the original data, and we need to exclude each
+    bootstrap sample 37% of the data share and share alike, which we usually
+    called them out-of-bag data (OOB data).
 
 2.  Construct a binary survival tree for each bootstrap sample. At each
-    node of the tree, p candidate variables are randomly selected, and
-    the node is split by using the candidate variables that maximize the
+    node of the tree, we are required to randomly choose *p* candidate variables, and we 
+    need to divide many new nodes with candidate variables that maximize the
     survival difference between the child nodes.
 
-3.  Grow the tree to full size with at least *d*<sub>0</sub> &gt; 0
-    number of events (deaths).
+3.  Grow the tree (forest) to full size with at least *d*<sub>0</sub> &gt; 0
+    number of events (like deaths).
 
 4.  Calculate cumulative risk function for each tree and obtain the mean
     value of the integrated cumulative risk function.
 
 5.  Calculate the integrated cumulative risk function prediction error
-    with OOB data.
+    with OOB data and IB data.
 
 ## 3. Ensemble cumulative hazard
 
 Regenerating the survival tree and building the integrated CHF
 (Cumulative Hazard Function) are the central elements of the RSF
-algorithm.
+algorithm [3].
 
 ### Binary Survival tree
 
@@ -188,16 +191,16 @@ of the tree that contains all the data. Using predetermined survival
 criteria, the root node is divided into two children: left and right. In
 turn, each child node is split, producing left and right child nodes
 with each split. The process is repeated recursively for each subsequent
-node.
+node [2,3].
 
-A good node segmentation can maximize the survival difference between
-the offspring. The optimal split for a node can be found by searching
+A good node split can maximize the survival difference between
+different children nodes. The optimal split for a node can be found by searching
 all possible x variables and split values c and selecting the x and c
 that maximize the survival difference. By maximizing survival
 differences, trees separate out different situations. Eventually, as the
 number of nodes increased, the alien cases were separated, and each node
 in the tree became homogenous, made up of samples with similar survival
-rates.
+rates [2-4].
 
 ### Node Segmentation Rules
 
@@ -205,14 +208,14 @@ At each node, a predictive variable *x* and a partition value *c* are
 randomly selected, *c* being some value of *x*. If
 *x*<sub>*i*</sub> &lt; *c*, then the sample *i* is divided into the
 right child node; If *x*<sub>*i*</sub> &gt; *c*, the sample *i* is
-assigned to the left child node.
+assigned to the left child node [5].
 
 Calculate log rank test:
 
 ![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;L(x,c)=\frac{\sum\limits_{i=1}^{N}(d_{i,1}-Y_{i,1}\frac{d_{i,1}}{Y_{i,1}})}{\sqrt{\sum\limits_{i=1}^{N}\frac{Y_{i,1}}{Y_{i}}(1-\frac{Y_{i,1}}{Y_{i}})\frac{Y_{i}-d_{i}}{Y_{i}-1}d_{i}}})
 
 
-Where, *j* = 1, 2 represents left and right child nodes,
+Where, *j* = 1, 2 represents left and right child nodes individually,
 
 *d*<sub>*i*, *j*</sub> is the number of events occurring in the sub-node
 *j* at the time *t*<sub>*i*</sub>,
@@ -233,13 +236,13 @@ variables *x* and partition values *c* that satisfies
 
 |*L*(*x*<sup>\*</sup>,*c*<sup>\*</sup>)| ≥ |*L*(*x*,*c*)|
 
-for all *x*<sup>\*</sup> and *c*<sup>\*</sup>.
+for all *x*<sup>\*</sup> and *c*<sup>\*</sup> [2].
 
 ### Leaf node prediction
 
 Eventually, the survival tree reaches a saturation point at which no new
 child nodes can be formed, because each node must contain at least
-*d*<sub>0</sub> &gt; 0 of unique death criteria. The last node in a
+*d*<sub>0</sub> &gt; 0 of unique death criteria [2]. The last node in a
 saturated tree is called a leaf node, denoted by *H*.
 
 Let
@@ -256,18 +259,18 @@ represents *N*(*h*) different moments when the event occurs;
 *t*<sub>*l*, *h*</sub>; *Y*<sub>*l*, *h*</sub> represents the number of
 people who are alive at the moment *t*<sub>*l*, *h*</sub>; The
 cumulative risk function of the leaf node *h* is estimated as
-Nelson-Aalen estimate:
+Nelson-Aalen estimate [2]:
 
-<img width="435" alt="Screen Shot 2022-05-14 at 7 06 36 PM" src="https://user-images.githubusercontent.com/32623146/168450791-182e43c7-ecd0-48f3-bdf3-f52a7fd132ee.png">
+![image](https://user-images.githubusercontent.com/92004817/168452887-02040c31-bf9e-4f1e-b00a-46a396765a50.png)
 
 
  
 The cumulative risk function is the same for all samples in the leaf
 node *h*. Each sample *i* has the d-dimension covariant
 *X*<sub>*i*</sub>, and *H*(*t*│*X*<sub>*i*</sub>) represents the
-cumulative risk function of sample *i*, and we have:
+cumulative risk function of sample *i*, and we have [2]:
 
-<img src="https://render.githubusercontent.com/render/math?math=H(t│X_i)=\hat{H}_h(t),if X_i∈h">
+![PW_F)X46CER K@6E4ZS~@VS](https://user-images.githubusercontent.com/92004817/168452552-7058b5d6-6f0e-4ceb-9d2b-17237b2abc4b.png)
 
 We have an example here to make our audience clear:
 
@@ -287,7 +290,7 @@ known how long the patient survives.
 Those who survive to time 5 was *i* = 1, 2, 3, 4, 5, 6, people who died
 at time 5 was *i* = 6;
 
-Those who survive to 30 hours was *i* = 1, 2, 4, 5, people who died at
+Those who survive to time 30 was *i* = 1, 2, 4, 5, people who died at
 time 30 was *i* = 4;
 
 Those who survive to time 32 was *i* = 1, 2, 5, people who died at time
@@ -303,15 +306,15 @@ So, we have the Nelson-Aalen estimate at time 33:
 thubusercontent.com/render/math?math=H(33)=\sum\limits_{i=0}^{33}\frac{d_i}{n_i}=\frac{d_5}{n_5}+\frac{d_30}{n_30}+\frac{d_33}{n_33} =\frac{1}{6}+\frac{1}{4}+\frac{1}{3}=0.75">
  -->
  
-### Bootstrap and OOB integrate cumulative risk functions
+### Bootstrap and OOB integrated cumulative risk functions
 
 The cumulative risk function:
 
-<img src="https://render.githubusercontent.com/render/math?math=H(t│X_i)=\hat{H}_h(t),if X_i∈h">
+![PW_F)X46CER K@6E4ZS~@VS](https://user-images.githubusercontent.com/92004817/168452544-0f4093e8-757f-4c6d-b81f-ede6979d69e7.png)
 
 We got above is derived only from a single tree, and we need to
 calculate the integrated cumulative risk function based on the mean of
-total *B* survival trees.
+total *B* survival trees [2].
 
 Assume that the cumulative risk function of the growth tree of the
 bootstrap sample *b* is *H*<sub>*b*</sub><sup>\*</sup>(*t*|*X*).
@@ -358,7 +361,7 @@ structure of survival tree enforces a null assumption that there are
 similar survival rates in its leaf nodes; Individuals within leaf nodes
 share a common estimated risk function. Thus, the nature of the survival
 tree and its integration indicates an estimate of mortality, which we
-call the ensemble mortality. The integrated mortality rate of the sample
+call the ensemble mortality [2,4,5]. The integrated mortality rate of the sample
 *i* from IB (in-bag) is defined as:
 
 <img width="151" alt="Screen Shot 2022-05-14 at 7 10 00 PM" src="https://user-images.githubusercontent.com/32623146/168450882-aeba150d-4ffb-4819-b9a4-64c8c204f5dd.png">
@@ -379,7 +382,7 @@ defined as:
  
 ## 5. Harrell’s C-index
 
-The intuition behind Harrell’s C-index is as follows. For patient *i*,
+The intuition behind Harrell’s C-index is as follows [6-8]. For patient *i*,
 our risk model assigns a risk score *η*<sub>*i*</sub>. If our risk model
 is any good, patients who had shorter times-to-disease should have
 higher risk scores. Boiling this intuition down to two patients: the
@@ -388,7 +391,7 @@ time-to-disease.
 
 We can compute the C-index in the following way: For every pair of
 patients *i* and *j* (with *i* ≠ *j*), look at their risk scores and
-times-to-event.
+times-to-event [6].
 
 1.  If both *T*<sub>*i*</sub> and *T*<sub>*j*</sub> are not censored,
     then we can observe when both patients got the disease. We say that
@@ -423,22 +426,22 @@ Thus we have C-index here:
 <!-- <img src="https://render.githubusercontent.com/render/math?math=C=\frac{concordant\; pair}{concordant\; pair+ discordant\; pair}">
  -->
  
-Values of*C* near 0.5 indicate that the risk score predictions are no
+Values of *C* near 0.5 indicate that the risk score predictions are no
 better than a coin flip in determining which patient will live longer.
 Values near 1 indicate that the risk scores are good at determining
 which of two patients will have the disease first. Values near 0 means
 that the risk scores are worse than a coin flip: you might be better off
-concluding the opposite of what the risk scores tell you.
+concluding the opposite of what the risk scores tell you [6,7,9].
 
 ### Harrell’s C-index for continuous data
 
 Of course, one can compute the C-index if none of the data is censored.
 In that case, all pairs such that *T*<sub>*i*</sub> ≠ *T*<sub>*j*</sub>
-will be included in the computation.
+will be included in the computation [6].
 
 ### Harrell’s C-index for binary data
 
-The concept of the C-index can be easily ported over to binary data. In
+The concept of the C-index can be easily ported over to binary data [6,7]. In
 this setting, a high-risk score prediction means more likely to be 1
 than a 0. We only consider pairs where subject *i*’s response is a 1 and
 subject *j*’s response is a one. The pair is concordant if
@@ -458,6 +461,72 @@ C-Index:
 
 
 This means that the prediction is not much better than a random guess.
+
+## 6. Criteria for variable selection
+
+Since the random survival forest model selects many features of input data as its split nodes to build the model, the model retains miscellaneous variables. However, not all variables have positive significance in the process of model building. Therefore, through variable screening, we can understand the role of each variable in the process of model building [2,9]. 
+
+There are two methods to evaluate the importance of variables, namely VIMP (variable Importance) method and minimal depth method. The calculation principle of VIMP method is to put the out of bag data into the survival tree and make it randomly assigned to any child node. Then calculate the new total cumulative risk and VIMP is the difference between the original error rate and the new error rate. Therefore, the larger the VIMP is, the greater the impact of this variable on the accuracy of the model and the higher the importance of this variable. Different from VIMP, the minimum depth rule believes that the variable to be retained should be the variable that can distinguish the most data, namely the node closest to the root node. Therefore, the minimum depth method considers that variables with smaller values are more important to the model [9,22].
+
+## 7. Some discussions
+
+Compared with traditional survival analysis methods like Cox proportional risk regression, the prediction accuracy of random survival forest model is at least equal to or better than that of traditional survival analysis method [2,4,9]. The advantage of the random survival forest model is that it is not constrained by the proportional hazard assumption, log-linear assumption, and other conditions [2,14]. At the same time, the random survival forest has the advantages of the general random forest, which can prevent the over-fitting problem of its algorithm through two random sampling processes [9,10]. In addition, random survival forest can also perform survival analysis and variable screening on high-dimensional data and can also be applied to analysis of competing risks [9-12,17-19]. Therefore, the random survival forest model has more extensive research space.
+
+It should be emphasized that although several literatures have shown that the accuracy of the random survival forest model is better than or at least equal to that of the traditional survival model, the traditional survival analysis method is still indispensable when the data meet the requirements of the traditional survival analysis. As an emerging method, random survival forest also has a defect: it is susceptible to outliers. When analyzing data with outliers, the prediction accuracy is slightly inferior to traditional survival analysis methods [13]. Drawbacks of random survival forests also include the common drawbacks of random forests including a bias towards inclusion of variables with many split points [20-24]. This effect leads to a bias in resulting summary estimates such as variable importance [20,22,24]. Conditional inference forests (CIF) are known to reduce this selection bias by separating the algorithm for selecting the best covariate to split on from that of the best split point search [20,22,24,25]. Cox proportional hazard regression model for survival data analysis is not only used for prediction, but also can be more convenient to give the relationship between variables and survival outcome, so it should be combined with the traditional survival analysis and random survival forest model cannot completely replace the traditional survival analysis model [9,13].
+
+## 8. Reference
+
+[1] https://zhuanlan.zhihu.com/p/96996531
+
+[2] Hemant Ishwaran. Udaya B. Kogalur. Eugene H. Blackstone. Michael S. Lauer. "Random survival forests." Ann. Appl. Stat. 2 (3) 841 - 860, September 2008. https://arxiv.org/pdf/0811.1645.pdf
+
+[3] https://luminwin.github.io/randomForestSRC/articles/survival.html
+
+[4] https://zhuanlan.zhihu.com/p/463015417
+
+[5] https://square.github.io/pysurvival/models/survival_forest.html
+
+[6] https://statisticaloddsandends.wordpress.com/2019/10/26/what-is-harrells-c-index/
+
+[7] Harrell Jr, F. E. et al. (1982). https://jamanetwork.com/journals/jama/article-abstract/372568
+
+[8] Schmid, M. et al. (2016). https://arxiv.org/pdf/1507.03092.pdf
+
+[9] Chen Z, Xu HM, Li ZX, Zhang Y, Zhou T, You WC, Pan KF, Li WQ. [Random survival forest: applying machine learning algorithm in survival analysis of biomedical data]. Zhonghua Yu Fang Yi Xue Za Zhi. 2021 Jan 6;55(1):104-109. Chinese. doi: 10.3760/cma.j.cn112150-20200911-01197. PMID: 33455140.
+
+[10] StroblC, MalleyJ, TutzG. An introduction to recursive partitioning: rationale, application, and characteristics of classification and regression trees, bagging, and random forests[J]. Psychol Methods, 2009, 14(4):323-348. DOI: 10.1037/a0016973.
+
+[11] IshwaranH, GerdsTA, KogalurUB, et al. Random survival forests for competing risks[J]. Biostatistics, 2014, 15(4):757-773. DOI: 10.1093/biostatistics/kxu010.
+
+[12] WangH, LiG. A Selective Review on Random Survival Forests for High Dimensional Data[J]. Quant Biosci, 2017, 36(2):85-96. DOI: 10.22283/qbs.2017.36.2.85.
+
+[13] MiaoF, CaiYP, ZhangYT, et al. Is Random Survival Forest an Alternative to Cox Proportional Model on Predicting Cardiovascular Disease?[J]. Ifmbe Proceedings, 2015, 45:740-743.
+
+[14] Ehrlinger J. ggRandomForests Exploring random forest survival. R Vignette. 2016.
+
+[15] Breiman L, Friedman J, Stone CJ, Olshen RA. Classification and regression trees. Belmont: CRC press; 1984.
+
+[16] Breiman L. Random forests. Mach Learn. 2001; 45(1):5–32.
+
+[17] Fernández T, Rivera N, Teh YW. Gaussian processes for survival analysis. In: Advances in Neural Information Processing Systems.New York: Curran Associates: 2016. p. 5015–023.
+
+[18] Taylor JM. Random survival forests. J Thorac Oncol. 2011; 6(12):1974–5.
+
+[19] Bou-Hamad I, Larocque D, Ben-Ameur H, et al. A review of survival trees. Stat Surv. 2011; 5:44–71.
+
+[20] Nasejje JB, Mwambi H, Dheda K, Lesosky M. A comparison of the conditional inference survival forest model to random survival forests based on a simulation study as well as on two applications with time-to-event data. BMC Med Res Methodol. 2017 Jul 28;17(1):115. doi: 10.1186/s12874-017-0383-8. PMID: 28754093; PMCID: PMC5534080.
+
+[21] Ziegler A, König IR. Mining data with random forests: current options for real-world applications. Wiley Interdiscip Rev Data Min Knowl Disc. 2014; 4(1):55–63.
+
+[22] Strobl C, Boulesteix AL, Zeileis A, Hothorn T. Bias in random forest variable importance measures: Illustrations, sources and a solution. BMC Bioinforma. 2007; 8(1):1.
+
+[23] Loh WY. Fifty years of classification and regression trees. Int Stat Rev. 2014; 82(3):329–48.
+
+[24] Wright MN, Dankowski T, Ziegler A. Unbiased split variable selection for random survival forests using maximally selected rank statistics. Stat Med. 2017; 36(8):1272–84. doi:10.1002/sim.7212.sim.7212.
+
+[25] Das A, Abdel-Aty M, Pande A. Using conditional inference forests to identify the factors affecting crash severity on arterial corridors. J Saf Res. 2009; 40(4):317–27.
+
+
 
 # Application in R
 
@@ -692,7 +761,7 @@ fitted survival probability table.
     ## 4 0.9934633 0.9868441 0.9661402 0.9604876 0.9604876 0.9553862
     ## 5 0.9600375 0.9600375 0.9297039 0.8834538 0.8834538 0.8828354
 
-Then I sampled 4 individuals to plot fitted survival curve.
+Then I sampled 4 individuals to plot fitted survival curve. Vertical lines are the corresponding actual event time of the four individuals.
 
     par(mfrow=c(1,1))
     set.seed(12345)
@@ -707,7 +776,9 @@ Then I sampled 4 individuals to plot fitted survival curve.
 
 ![](php2650_proj_files/figure-markdown_strict/unnamed-chunk-14-1.png)
 
-    veteran_train[individual,]
+    #covariate values of the four individuals:
+    veteran_train[individual,] 
+
 
     ##    trt  celltype time status karno diagtime age prior
     ## 1:   2 smallcell   21      1    20        4  71     0
