@@ -63,7 +63,7 @@ and cumulative hazard function are written as:
 Hazard function (hazard rate): instantaneous potential per unit time for
 the event to occur at time t, given survival up to time t:
 
-<img src="https://render.githubusercontent.com/render/math?math=h(t) = lim \Delta t \rightarrow 0 : \frac {P(t\leq T<t+\Delta t|T\geq t)} {\Delta(t)}">
+<img src="https://render.githubusercontent.com/render/math?math=\Large h(t) = lim \Delta t \rightarrow 0 : \frac {P(t\leq T<t+\Delta t|T\geq t)} {\Delta(t)}">
 
 <!-- $$h(t) = lim \Delta t \rightarrow 0 : \frac {P(t\leq T<t+\Delta t|T\geq t)} {\Delta(t)}$$ -->
 
@@ -86,9 +86,8 @@ to time t
 
 Assume *h*<sub>0</sub>(*t*) as fixed and *X*<sub>*j*</sub> are
 **time-independent**:
-<img src="https://render.githubusercontent.com/render/math?math=h(t)=h_0(t)e^{\sum_{j=1}^p\beta_jX_j}">
+<img src="https://render.githubusercontent.com/render/math?math=\large h(t)=h_0(t)e^{\sum_{j=1}^p\beta_jX_j}">
 
-$$h(t)=h\_0(t)e^{\\sum\_{j=1}^p\\beta\_jX\_j}$$
 
 ## PH assumption
 
@@ -102,9 +101,8 @@ other set of covariate X.
 
 Hazard Ratio *θ* is defined as:
 
-<img src="https://render.githubusercontent.com/render/math?math=HR=\frac{h(t,X^*)}{h(t,X)}=e^{\sum_{j=1}^p\beta_j(X_j^*-X_j)}=\theta">
+<img src="https://render.githubusercontent.com/render/math?math=\Large HR=\frac{h(t,X^*)}{h(t,X)}=e^{\sum_{j=1}^p\beta_j(X_j^*-X_j)}=\theta">
 
-$$HR=\\frac{h(t,X^\*)}{h(t,X)}=e^{\\sum\_{j=1}^p\\beta\_j(X\_j^\*-X\_j)}=\\theta$$
 
 Graphically, this is represented as roughly parallel survival curves
 between different categories of a covariate. For example, the graph
@@ -129,36 +127,337 @@ points.
 
 ### Conditional Inference Forest (CIF)\*:
 
-“The random survival forests algorithm, has been criticised for having a
-bias towards selecting variables with many split points and the
-conditional inference forest algorithm has been identified as a method
-to reduce this selection bias.”. As a further alternative to survival
-trees, CIF is able to correct bias in RSF “by separating the algorithm
-for selecting the best covariate to split on from that of the best split
-point search” (BMC paper)
+Conditional Inference Forest could be used as an alternative to survival
+trees and is able to avoid the bias towards selecting variables with
+many split points. CIF corrects bias by y separating the algorithm for
+selecting the best covariate to split on from that of the best split
+point search. Nasejje et.al have a more comprehensive discussion about
+comparing the methods in [this
+paper](https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-017-0383-8)
 
 ------------------------------------------------------------------------
 
-# Survival Random Forest / Survival Tree
+# Survival Random Forest
 
 Idea: partitioning the covariate space recursively to form groups of
 subjects who are similar according to the time-to-event outcome.
 Minimizing a given impurity measure. Goal: To identify prognostic
 factors that are predictive of the time-to-event outcome.
 
-## Split Rules:
+## 1. Introduction
 
-### The log-rank split-rule …
+Random survival forest (RSF) is a random forest method used to analyze
+right deletion survival data. It introduces new survival splitting rules
+for growing survival trees and new missing data algorithms for
+estimating missing data. RSF introduced the event retention principle
+for living forests and used it to define overall mortality, which is a
+simple interpretable mortality measure that can be used as a predictive
+result. R package “randomSurvivalForest” provides an interface to use.
 
-… The best split at a node h, on a covariate x at a split point s ∗ is
-the one that gives the largest log-rank statistic between the two
-daughter nodes ..
+## 2. RSF framework
 
-### The log-rank score split-rule …
+1.  Extract *B* bootstrap samples from the original data, and each
+    bootstrap sample excludes 37% of the data on average, which is
+    called out-of-bag data (OOB data).
 
-… Trees are generally unstable and hence researchers have recommended
-the growing of a collection of trees \[10, 27\], commonly referred to as
-random survival forests \[20, 26\].
+2.  Construct a binary survival tree for each bootstrap sample. At each
+    node of the tree, p candidate variables are randomly selected, and
+    the node is split by using the candidate variables that maximize the
+    survival difference between the child nodes.
+
+3.  Grow the tree to full size with at least *d*<sub>0</sub> &gt; 0
+    number of events (deaths).
+
+4.  Calculate cumulative risk function for each tree and obtain the mean
+    value of the integrated cumulative risk function.
+
+5.  Calculate the integrated cumulative risk function prediction error
+    with OOB data.
+
+## 3. Ensemble cumulative hazard
+
+Regenerating the survival tree and building the integrated CHF
+(Cumulative Hazard Function) are the central elements of the RSF
+algorithm.
+
+### Binary Survival tree
+
+Like CART, a survival tree is a binary tree generated by recursively
+splitting tree nodes. A tree grows from the root node, which is the top
+of the tree that contains all the data. Using predetermined survival
+criteria, the root node is divided into two children: left and right. In
+turn, each child node is split, producing left and right child nodes
+with each split. The process is repeated recursively for each subsequent
+node.
+
+A good node segmentation can maximize the survival difference between
+the offspring. The optimal split for a node can be found by searching
+all possible x variables and split values c and selecting the x and c
+that maximize the survival difference. By maximizing survival
+differences, trees separate out different situations. Eventually, as the
+number of nodes increased, the alien cases were separated, and each node
+in the tree became homogenous, made up of samples with similar survival
+rates.
+
+### Node Segmentation Rules
+
+At each node, a predictive variable *x* and a partition value *c* are
+randomly selected, *c* being some value of *x*. If
+*x*<sub>*i*</sub> &lt; *c*, then the sample *i* is divided into the
+right child node; If *x*<sub>*i*</sub> &gt; *c*, the sample *i* is
+assigned to the left child node.
+
+Calculate log rank test:
+
+![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;L(x,c)=\frac{\sum\limits_{i=1}^{N}(d_{i,1}-Y_{i,1}\frac{d_{i,1}}{Y_{i,1}})}{\sqrt{\sum\limits_{i=1}^{N}\frac{Y_{i,1}}{Y_{i}}(1-\frac{Y_{i,1}}{Y_{i}})\frac{Y_{i}-d_{i}}{Y_{i}-1}d_{i}}})
+
+
+Where, *j* = 1, 2 represents left and right child nodes,
+
+*d*<sub>*i*, *j*</sub> is the number of events occurring in the sub-node
+*j* at the time *t*<sub>*i*</sub>,
+
+*Y*<sub>*i*, *j*</sub> is the number of all patients in the sub-node *j*
+at the moment *t*<sub>*i*</sub>,
+
+*d*<sub>*i*</sub> is the number of default events occurring at the time
+*t*<sub>*i*</sub>,
+*d*<sub>*i*</sub> = ∑<sub>*j*</sub>*d*<sub>*i*, *j*</sub> ,
+
+*Y*<sub>*i*</sub> is the number of all borrowers at the moment
+*t*<sub>*i*</sub>,
+*Y*<sub>*i*</sub> = ∑<sub>*j*</sub>*Y*<sub>*i*, *j*</sub> .
+
+Iterate over all possible variables *x* and partition values *c*, find
+variables *x* and partition values *c* that satisfies
+
+|*L*(*x*<sup>\*</sup>,*c*<sup>\*</sup>)| ≥ |*L*(*x*,*c*)|
+
+for all *x*<sup>\*</sup> and *c*<sup>\*</sup>.
+
+### Leaf node prediction
+
+Eventually, the survival tree reaches a saturation point at which no new
+child nodes can be formed, because each node must contain at least
+*d*<sub>0</sub> &gt; 0 of unique death criteria. The last node in a
+saturated tree is called a leaf node, denoted by *H*.
+
+Let
+(*T*<sub>(1,*h*)</sub>,*δ*<sub>(1,*h*)</sub>),…,(*T*<sub>(*n*(*h*),*h*)</sub>,*δ*<sub>(*n*(*h*),*h*)</sub>)
+represent the sample survival time and 0-1 deletion information at the
+leaf node *h* ∈ *H*. *δ*<sub>*i*, *h*</sub> = 0 represents the right
+deletion of sample *T*<sub>*i*, *h*</sub> at moment *i*;
+*δ*<sub>*i*, *h*</sub> = 1 indicates that the sample
+*T*<sub>*i*, *h*</sub> occurs at time *i*.
+
+*t*<sub>1, *h*</sub> &lt; *t*<sub>2, *h*</sub> &lt; ⋯ &lt; *t*<sub>*N*(*h*), *h*</sub>
+represents *N*(*h*) different moments when the event occurs;
+*d*<sub>*l*, *h*</sub> represents the number of deaths at the time
+*t*<sub>*l*, *h*</sub>; *Y*<sub>*l*, *h*</sub> represents the number of
+people who are alive at the moment *t*<sub>*l*, *h*</sub>; The
+cumulative risk function of the leaf node *h* is estimated as
+Nelson-Aalen estimate:
+
+<img width="435" alt="Screen Shot 2022-05-14 at 7 06 36 PM" src="https://user-images.githubusercontent.com/32623146/168450791-182e43c7-ecd0-48f3-bdf3-f52a7fd132ee.png">
+
+
+ 
+The cumulative risk function is the same for all samples in the leaf
+node *h*. Each sample *i* has the d-dimension covariant
+*X*<sub>*i*</sub>, and *H*(*t*│*X*<sub>*i*</sub>) represents the
+cumulative risk function of sample *i*, and we have:
+
+<img src="https://render.githubusercontent.com/render/math?math=H(t│X_i)=\hat{H}_h(t),if X_i∈h">
+
+We have an example here to make our audience clear:
+
+We have a table below:
+
+![WechatIMG1462](https://user-images.githubusercontent.com/32623146/168451045-18dd72c3-2ec6-4a7e-b0f7-0164fba21b10.png)
+
+
+In the table above, *i* represents patient *i*, *t*<sub>*i*</sub>
+represents survival time of patient *i*, where 27+ indicates that the
+patient exited at moment 27, which belongs to deletion, and it is not
+known how long the patient survives.
+
+*t*<sub>*i*</sub> from small to large order is 5, 27+, 30, 32, 35, 35,
+40, then:
+
+Those who survive to time 5 was *i* = 1, 2, 3, 4, 5, 6, people who died
+at time 5 was *i* = 6;
+
+Those who survive to 30 hours was *i* = 1, 2, 4, 5, people who died at
+time 30 was *i* = 4;
+
+Those who survive to time 32 was *i* = 1, 2, 5, people who died at time
+32 was *i* = 2.
+
+So, we have the Nelson-Aalen estimate at time 33:
+
+<img width="400" alt="Screen Shot 2022-05-14 at 7 08 06 PM" src="https://user-images.githubusercontent.com/32623146/168450809-745eaddc-9653-4a40-b571-d27cd851c0d0.png">
+
+
+
+<!-- <img src="https://render.gi![Uploading Screen Shot 2022-05-14 at 7.07.50 PM.png…]()
+thubusercontent.com/render/math?math=H(33)=\sum\limits_{i=0}^{33}\frac{d_i}{n_i}=\frac{d_5}{n_5}+\frac{d_30}{n_30}+\frac{d_33}{n_33} =\frac{1}{6}+\frac{1}{4}+\frac{1}{3}=0.75">
+ -->
+ 
+### Bootstrap and OOB integrate cumulative risk functions
+
+The cumulative risk function:
+
+<img src="https://render.githubusercontent.com/render/math?math=H(t│X_i)=\hat{H}_h(t),if X_i∈h">
+
+We got above is derived only from a single tree, and we need to
+calculate the integrated cumulative risk function based on the mean of
+total *B* survival trees.
+
+Assume that the cumulative risk function of the growth tree of the
+bootstrap sample *b* is *H*<sub>*b*</sub><sup>\*</sup>(*t*|*X*).
+
+And we also assume that *I*<sub>*i*, *b*</sub> = 1 indicates that *i* is
+a case in *b*th bootstrap sample, otherwise *I*<sub>*i*, *b*</sub> = 0.
+
+The integrated cumulative risk function of the ith sample from OOB
+(out-of-bag) is:
+
+<img width="227" alt="Screen Shot 2022-05-14 at 7 08 39 PM" src="https://user-images.githubusercontent.com/32623146/168450826-ebd7f904-bc2d-4dca-a17e-c0c49739b6bd.png">
+
+
+<!-- <img src="https://render.githubusercontent.com/render/math?math=H{^{**}_{e}}(t│X_i)=\frac{\sum\limits_{b=1}^BI_{i,b}H_b^* (t|X_i)}{\sum\limits_{b=1}^BI_{i,b}}">
+ -->
+ 
+And the integrated cumulative risk function of the ith sample from IB
+(in-bag) is:
+
+<img width="217" alt="Screen Shot 2022-05-14 at 7 08 58 PM" src="https://user-images.githubusercontent.com/32623146/168450849-3ecc4c43-9f65-4273-9dd5-646133254909.png">
+
+
+<!-- <img src="https://render.githubusercontent.com/render/math?math=H_e^*(t│X_i)=\frac{1}{B}\sum\limits_{b=1}^BH_b^*(t|X_i)">
+ -->
+ 
+## 4. Ensemble mortality
+
+In the Random Survival Forest, mortality is defined as the sum of
+expected value of the cumulative risk function over time
+*T*<sub>*j*</sub>, subject to a specific *X*<sub>*i*</sub>. Under the
+null hypothesis of similar survival behavior, it measures the expected
+number of deaths. Specifically, the mortality rate of *i* is:
+
+<img width="175" alt="Screen Shot 2022-05-14 at 7 09 33 PM" src="https://user-images.githubusercontent.com/32623146/168450870-ea75577b-9545-44a6-b08b-a8db7094fc19.png">
+
+
+<!-- <img src="https://render.githubusercontent.com/render/math?math=M_i=E_i(\sum\limits_{j=1}^nH(T_j |X_i))"> -->
+
+where *E*<sub>*i*</sub> represents the expectation given the null
+hypothesis that all *j* are similar to *i*.
+
+Mortality can be estimated naturally in the survival tree model. The
+structure of survival tree enforces a null assumption that there are
+similar survival rates in its leaf nodes; Individuals within leaf nodes
+share a common estimated risk function. Thus, the nature of the survival
+tree and its integration indicates an estimate of mortality, which we
+call the ensemble mortality. The integrated mortality rate of the sample
+*i* from IB (in-bag) is defined as:
+
+<img width="151" alt="Screen Shot 2022-05-14 at 7 10 00 PM" src="https://user-images.githubusercontent.com/32623146/168450882-aeba150d-4ffb-4819-b9a4-64c8c204f5dd.png">
+
+
+<!-- <img src="https://render.githubusercontent.com/render/math?math=\hat{M}{^{*}_{ei}}=\sum\limits_{j=1}^n H{^{*}_{e}(T_j |X_i)}">
+ -->
+
+
+Similarly, the integrated mortality rate from the OOB sample *i* is
+defined as:
+
+<img width="158" alt="Screen Shot 2022-05-14 at 7 10 22 PM" src="https://user-images.githubusercontent.com/32623146/168450892-39c827c5-0b81-43ec-bf67-a9c4ffbd5fe8.png">
+
+
+<!-- <img src="https://render.githubusercontent.com/render/math?math=\hat{M}{^{**}_{ei}}=\sum\limits_{j=1}^n H{^{**}_{e}(T_j |X_i)}">
+ -->
+ 
+## 5. Harrell’s C-index
+
+The intuition behind Harrell’s C-index is as follows. For patient *i*,
+our risk model assigns a risk score *η*<sub>*i*</sub>. If our risk model
+is any good, patients who had shorter times-to-disease should have
+higher risk scores. Boiling this intuition down to two patients: the
+patient with the higher risk score should have a shorter
+time-to-disease.
+
+We can compute the C-index in the following way: For every pair of
+patients *i* and *j* (with *i* ≠ *j*), look at their risk scores and
+times-to-event.
+
+1.  If both *T*<sub>*i*</sub> and *T*<sub>*j*</sub> are not censored,
+    then we can observe when both patients got the disease. We say that
+    the pair (*i*,*j*) is a concordant pair if and
+    *T*<sub>*i*</sub> &lt; *T*<sub>*j*</sub>, and it is a discordant
+    pair if *η*<sub>*i*</sub> &gt; *η*<sub>*j*</sub> and
+    *T*<sub>*i*</sub> &gt; *T*<sub>*j*</sub>.
+
+2.  If both *T*<sub>*i*</sub> and *T*<sub>*j*</sub> are censored, then
+    we don’t know who got the disease first (if at all), so we don’t
+    consider this pair in the computation.
+
+3.  If one of *T*<sub>*i*</sub> and *T*<sub>*j*</sub> is censored, we
+    only observe one disease. Let’s say we observe patient *i* getting
+    disease at time *T*<sub>*i*</sub>, and that *T*<sub>*j*</sub> is
+    censored. (The same logic holds for the reverse situation.)
+
+4.  If *T*<sub>*i*</sub> &gt; *T*<sub>*j*</sub>, then we don’t know for
+    sure who got the disease first, so we don’t consider this pair in
+    the computation.
+
+5.  If *T*<sub>*i*</sub> &lt; *T*<sub>*j*</sub>, then we know for sure
+    that patient *i* got the disease first. Hence, (*i*,*j*) is a
+    concordant pair if *η*<sub>*i*</sub> &gt; *η*<sub>*j*</sub>, and is
+    a discordant pair if *η*<sub>*i*</sub> &lt; *η*<sub>*j*</sub>.
+
+Thus we have C-index here:
+
+<img width="295" alt="Screen Shot 2022-05-14 at 7 10 47 PM" src="https://user-images.githubusercontent.com/32623146/168450899-c96e2561-9c46-4114-aafe-95a74b7abb7a.png">
+
+
+<!-- <img src="https://render.githubusercontent.com/render/math?math=C=\frac{concordant\; pair}{concordant\; pair+ discordant\; pair}">
+ -->
+ 
+Values of*C* near 0.5 indicate that the risk score predictions are no
+better than a coin flip in determining which patient will live longer.
+Values near 1 indicate that the risk scores are good at determining
+which of two patients will have the disease first. Values near 0 means
+that the risk scores are worse than a coin flip: you might be better off
+concluding the opposite of what the risk scores tell you.
+
+### Harrell’s C-index for continuous data
+
+Of course, one can compute the C-index if none of the data is censored.
+In that case, all pairs such that *T*<sub>*i*</sub> ≠ *T*<sub>*j*</sub>
+will be included in the computation.
+
+### Harrell’s C-index for binary data
+
+The concept of the C-index can be easily ported over to binary data. In
+this setting, a high-risk score prediction means more likely to be 1
+than a 0. We only consider pairs where subject *i*’s response is a 1 and
+subject *j*’s response is a one. The pair is concordant if
+*η*<sub>*i*</sub> &gt; *η*<sub>*j*</sub>, and discordant if
+*η*<sub>*i*</sub> &lt; *η*<sub>*j*</sub>.
+
+We also have an example below
+
+<img width="341" alt="Screen Shot 2022-05-14 at 7 23 13 PM" src="https://user-images.githubusercontent.com/32623146/168451122-6b37e321-c8cb-41fa-a7bc-ba5d737ff75e.png">
+
+
+
+We have Concordant pairs：(A,C) (A,E) (C,D) so we can calculate the
+C-Index:
+
+<img width="118" alt="Screen Shot 2022-05-14 at 7 22 11 PM" src="https://user-images.githubusercontent.com/32623146/168451099-f018b1ef-181d-4b18-a83b-ebdde2f8f077.png">
+
+
+This means that the prediction is not much better than a random guess.
 
 # Application in R
 
@@ -258,7 +557,6 @@ First, we split data into training set and test set:
     data(veteran)
     veteran <- data.table(veteran)
     vet = veteran
-
     # Next, we split the data in a training and test set.
     set.seed(123456)
     ind <- sample(1:nrow(veteran),round(nrow(veteran) * 0.7,0))
@@ -277,7 +575,7 @@ between treatment groups:
     legend("topright", lwd = 1, col = c('blue','red'), cex=0.7, y.intersp = 0.5, legend = c('trt=1', 'trt=2'))
     abline(h=0.5,lty=3)
 
-![](php2650_proj_files/figure-markdown_strict/unnamed-chunk-7-1.png)
+![](php2650_proj_files/figure-markdown_strict/unnamed-chunk-8-1.png)
 
 ## Cox PH Model
 
@@ -288,12 +586,10 @@ might be violated.
 
     coxm0 = coxph(Surv(time, status)~(celltype+trt+karno+diagtime+age+prior)^2, data=vet.tr, ties='breslow')
     # coxm1 = step(coxm0, direction = "backward")
-
     # model selected from backward selection
     coxm1 = coxph(formula = Surv(time, status) ~ celltype + trt + karno + diagtime + prior + 
-        celltype:trt + trt:karno + trt:diagtime + trt:prior + karno:prior, data = vet.tr, ties = "breslow")
+        celltype:trt + trt:karno + trt:diagtime + trt:prior + karno:prior, data = vet.tr, ties = "breslow", x=TRUE)
     # summary(coxm1)
-
     # PH assumption: non-parallel, violated
     par(mfrow=c(2,2))
     sapply(list(vet.tr$trt, vet.tr$celltype, vet.tr$karno, vet.tr$prior), 
@@ -307,7 +603,7 @@ might be violated.
                               main='Log-Log Survival Curves')
     )
 
-![](php2650_proj_files/figure-markdown_strict/unnamed-chunk-8-1.png)
+![](php2650_proj_files/figure-markdown_strict/unnamed-chunk-9-1.png)
 
 The goodness of fit test based on Schoenfeld Residuals is another way to
 test the PH assumption, which is the null hypothesis. However, we can
@@ -380,7 +676,6 @@ fitted survival probability table.
 
     # distinct survival time in training data
     # r_fit$unique.death.times
-
     # fitted survival: survival probability
     # rows represent individual patient; columns represent event time points
     fit.surv = r_fit$survival
@@ -410,7 +705,7 @@ Then I sampled 4 individuals to plot fitted survival curve.
     legend("topright", lwd = 1, col = c('red','blue','green','pink'),
            legend = c('id14', 'id51', 'id80', 'id90'))
 
-![](php2650_proj_files/figure-markdown_strict/unnamed-chunk-13-1.png)
+![](php2650_proj_files/figure-markdown_strict/unnamed-chunk-14-1.png)
 
     veteran_train[individual,]
 
@@ -446,7 +741,8 @@ considered as important in affecting survival probability.
     ## Call:
     ## coxph(formula = Surv(time, status) ~ celltype + trt + karno + 
     ##     diagtime + prior + celltype:trt + trt:karno + trt:diagtime + 
-    ##     trt:prior + karno:prior, data = vet.tr, ties = "breslow")
+    ##     trt:prior + karno:prior, data = vet.tr, ties = "breslow", 
+    ##     x = TRUE)
     ## 
     ##                            coef exp(coef)  se(coef)      z        p
     ## celltypesmallcell     -0.342321  0.710120  0.935734 -0.366  0.71449
@@ -477,11 +773,9 @@ accuracy at time point 80 is 63%.
     preds <- predict(r_fit, veteran_test, type = 'response')$survival
     preds = data.frame(preds)
     colnames(preds) <- paste0('T',as.character(r_fit$unique.death.times))
-
     predEvent = preds$T80 > 0.5
     actualEvent = veteran_test$time >= 80
     accuracy = sum(predEvent==actualEvent)/length(actualEvent)
-
     table(predEvent, actualEvent)
 
     ##          actualEvent
@@ -514,4 +808,42 @@ represents the time index, not the actual time point period.
     # plot accuracy
     plot(accuracy_list,type='o',pch=16, main='Prediction accuracy by time', xlab='Time Index', ylab='Accuracy')
 
-![](php2650_proj_files/figure-markdown_strict/unnamed-chunk-17-1.png)
+![](php2650_proj_files/figure-markdown_strict/unnamed-chunk-18-1.png)
+
+### C-Index
+
+Additionally, we can use C-Index as metric for model performance. For
+Cox PH model, we can calculate C-Index using `pec` library. For random
+survival forest model, `ranger` compute Harrell’s c-index as a similar
+measure to the Concordance statistic. And the Harrell’s c-index would be
+1 - Prediction Error, according to Rickert’s discussion.
+(*<https://rviews.rstudio.com/2017/09/25/survival-analysis-with-r/>*)
+
+#### Cox PH C-Index:
+
+    library(pec)
+    # install.packages('pec')
+    cindexcox = pec::cindex(coxm1, 
+                formula = Surv(time, status) ~ celltype + trt + karno + 
+                  diagtime + prior + celltype:trt + trt:karno + trt:diagtime + 
+                  trt:prior + karno:prior,
+                data=vet.tr,
+                eval.times=r_fit$unique.death.times) # evaluating all survival times
+    plot(cindexcox, xlim=c(0,80))
+
+![](php2650_proj_files/figure-markdown_strict/unnamed-chunk-19-1.png)
+
+#### Random Survival Forest Harrell’s c-index
+
+Harrell’s c-index is calculated as below. More exploration will be
+needed regarding the degree of similarity between Harrell’s c-index and
+Concordance statistic, and calculation for more time points.
+
+    1 - r_fit$prediction.error
+
+    ## [1] 0.6899351
+
+
+
+<img width="168" alt="Screen Shot 2022-05-14 at 1 38 56 PM" src="https://user-images.githubusercontent.com/32623146/168450750-a846ce4d-7dd2-4b60-90c6-c1d3f4504991.png">
+
