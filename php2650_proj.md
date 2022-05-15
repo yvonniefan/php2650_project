@@ -272,6 +272,7 @@ node *h*. Each sample *i* has the d-dimension covariant
 *X*<sub>*i*</sub>, and *H*(*t*│*X*<sub>*i*</sub>) represents the
 cumulative risk function of sample *i*, and we have:
 
+![PW_F)X46CER K@6E4ZS~@VS](https://user-images.githubusercontent.com/92004817/168452552-7058b5d6-6f0e-4ceb-9d2b-17237b2abc4b.png)
 <img src="https://render.githubusercontent.com/render/math?math=H(t│X_i)=\hat{H}_h(t),if X_i∈h">
 
 We have an example here to make our audience clear:
@@ -292,7 +293,7 @@ known how long the patient survives.
 Those who survive to time 5 was *i* = 1, 2, 3, 4, 5, 6, people who died
 at time 5 was *i* = 6;
 
-Those who survive to 30 hours was *i* = 1, 2, 4, 5, people who died at
+Those who survive to time 30 was *i* = 1, 2, 4, 5, people who died at
 time 30 was *i* = 4;
 
 Those who survive to time 32 was *i* = 1, 2, 5, people who died at time
@@ -312,6 +313,7 @@ thubusercontent.com/render/math?math=H(33)=\sum\limits_{i=0}^{33}\frac{d_i}{n_i}
 
 The cumulative risk function:
 
+![PW_F)X46CER K@6E4ZS~@VS](https://user-images.githubusercontent.com/92004817/168452544-0f4093e8-757f-4c6d-b81f-ede6979d69e7.png)
 <img src="https://render.githubusercontent.com/render/math?math=H(t│X_i)=\hat{H}_h(t),if X_i∈h">
 
 We got above is derived only from a single tree, and we need to
